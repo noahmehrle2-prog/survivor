@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1115">
+<title>Mehrle Survivor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--card2:#1d212b;--line:#2a2f3a;--tx:#e5e9f0;--dim:#8b93a3;
+--green:#4ade80;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+padding-bottom:env(safe-area-inset-bottom)}
+header{padding:16px 18px 10px;display:flex;align-items:baseline;justify-content:space-between}
+header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.01em}
+header .who{font-size:13px;color:var(--dim)}
+header .who a{color:var(--blue);text-decoration:none}
+main{max-width:560px;margin:0 auto;padding:0 14px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:15px}
+.statusband{border-radius:14px;padding:14px 16px;margin-bottom:14px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.statusband.alive{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:var(--green)}
+.statusband.out{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:var(--red)}
+.statusband .sub{font-size:12px;font-weight:400;color:var(--dim)}
+.pickedbanner{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.4);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.game{display:flex;gap:8px;margin-bottom:8px;align-items:stretch}
+.game .at{align-self:center;color:var(--dim);font-size:12px;width:16px;text-align:center;flex:none}
+.game .when{align-self:center;color:var(--dim);font-size:11px;width:64px;flex:none;text-align:right}
+button.team{flex:1;background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;
+padding:12px 8px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px}
+button.team.sel{background:rgba(74,222,128,.18);border-color:var(--green);color:var(--green)}
+button.team.used{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+button.team.locked{opacity:.35;cursor:not-allowed}
+button.team.mypick{outline:2px solid var(--blue)}
+.submitbar{position:sticky;bottom:0;padding:10px 0 14px;background:linear-gradient(transparent, var(--bg) 30%)}
+button.big{width:100%;background:var(--green);color:#08210f;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:800;cursor:pointer}
+button.big:disabled{opacity:.4}
+button.big.sec{background:var(--card2);color:var(--tx);border:1px solid var(--line)}
+.namebtn{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--tx);
+border-radius:10px;padding:13px 14px;font-size:15px;margin-bottom:8px;cursor:pointer}
+.namebtn.taken{opacity:.45}
+.namebtn .tag{float:right;font-size:11px;color:var(--dim)}
+input[type=text]{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:12px;font-size:16px;margin-bottom:10px}
+.hist{display:flex;flex-wrap:wrap;gap:6px}
+.hist span{border-radius:8px;padding:5px 9px;font-size:12px;font-weight:600;background:var(--card2);border:1px solid var(--line)}
+.hist span.W{background:rgba(74,222,128,.15);color:var(--green)}
+.hist span.L,.hist span.T,.hist span.MISS{background:rgba(248,113,113,.15);color:var(--red)}
+.standrow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.standrow:last-child{border-bottom:none}
+.standrow .st{font-size:12px;font-weight:700}
+.standrow .st.alive{color:var(--green)} .standrow .st.out{color:var(--dim)}
+.muted{color:var(--dim);font-size:13px}
+.err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:10px;padding:12px;margin-bottom:12px;font-size:14px}
+.ok{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.4);border-radius:10px;padding:12px;margin-bottom:12px;font-size:14px}
+.count{font-variant-numeric:tabular-nums}
+.potline{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--green);
+color:var(--tx);padding:10px 18px;border-radius:10px;display:none;z-index:50;font-size:14px;max-width:90vw}
+.spin{text-align:center;padding:60px 0;color:var(--dim)}
+footer{max-width:560px;margin:0 auto;padding:8px 18px 30px;color:var(--dim);font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏈 <span id="hName">Mehrle Survivor</span></h1>
+  <div class="who" id="hWho"></div>
+</header>
+<main id="app"><div class="spin">Loading…</div></main>
+<footer id="foot"></footer>
+<div id="toast"></div>
+<script>
+"use strict";
+// ================= config =================
+const SUPABASE_URL = "https://inbgusprbxtvmdpeqksn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluYmd1c3ByYnh0dm1kcGVxa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTk2OTMsImV4cCI6MjA5OTgzNTY5M30.QUM68361lXHWqetmzA-LFOu6W33Goj-sZp5JwJUpZXs";
+const DEMO = /(\?|&)demo=1/.test(location.search);
+
+const TEAM_NAMES = {ARI:'Cardinals',ATL:'Falcons',BAL:'Ravens',BUF:'Bills',CAR:'Panthers',CHI:'Bears',
+CIN:'Bengals',CLE:'Browns',DAL:'Cowboys',DEN:'Broncos',DET:'Lions',GB:'Packers',HOU:'Texans',IND:'Colts',
+JAX:'Jaguars',KC:'Chiefs',LV:'Raiders',LAC:'Chargers',LAR:'Rams',MIA:'Dolphins',MIN:'Vikings',NE:'Patriots',
+NO:'Saints',NYG:'Giants',NYJ:'Jets',PHI:'Eagles',PIT:'Steelers',SF:'49ers',SEA:'Seahawks',TB:'Buccaneers',
+TEN:'Titans',WSH:'Commanders'};
+
+// ================= state =================
+let sb = null, session = null;
+let db = { league:null, players:[], week:null, myPick:null };
+let me = { pid: localStorage.getItem('survivor_pid') || null, player:null };
+let sel = null;      // currently tapped team
+let view = 'home';
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', 3000);
+}
+function fmtKick(iso){
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', {weekday:'short', hour:'numeric', minute:'2-digit'}).replace(',', '');
+}
+function money(n){ return '$' + (+n || 0).toLocaleString(); }
+
+// ================= data =================
+async function ensureSession(){
+  const { data } = await sb.auth.getSession();
+  if (data.session){ session = data.session; return; }
+  const { data: d2, error } = await sb.auth.signInAnonymously();
+  if (error) throw error;
+  session = d2.session;
+}
+
+async function loadAll(){
+  const [lg, pl, wk] = await Promise.all([
+    sb.from('league').select('config,state,updated_at').eq('id', 1).maybeSingle(),
+    sb.from('players').select('pid,name,claim_uid,alive,elim_week,used_teams').order('name'),
+    sb.from('weeks').select('week,kicks,games,first_kickoff').order('week'),
+  ]);
+  if (lg.error || pl.error || wk.error) throw (lg.error || pl.error || wk.error);
+  db.league = lg.data || {config:{}, state:{}};
+  db.players = pl.data || [];
+  // pick week = first published week that still has a game in the future
+  const now = Date.now();
+  db.week = null;
+  for (const w of (wk.data || [])){
+    const kicks = w.kicks || {};
+    if (Object.values(kicks).some(iso => new Date(iso).getTime() > now)){ db.week = w; break; }
+  }
+  me.player = me.pid ? db.players.find(p => p.pid === me.pid) : null;
+  // device thinks it's someone, but the claim was reset or belongs to another uid -> back to claim
+  if (me.player && me.player.claim_uid && session && me.player.claim_uid !== session.user.id){
+    me.player = null; me.pid = null; localStorage.removeItem('survivor_pid');
+  }
+  db.myPick = null;
+  if (me.player && db.week){
+    const { data } = await sb.from('picks').select('id,team,week,submitted_at')
+      .eq('pid', me.pid).eq('week', db.week.week).maybeSingle();
+    db.myPick = data || null;
+  }
+}
+
+async function claim(pid){
+  const { data, error } = await sb.rpc('claim_player', { p_pid: pid });
+  if (error){ toast('Claim failed: ' + error.message); return; }
+  if (data !== true){
+    toast('That name is already claimed on another phone. If it’s really you, ask Noah to reset it.');
+    return;
+  }
+  me.pid = pid; localStorage.setItem('survivor_pid', pid);
+  await loadAll(); render();
+  toast('Welcome, ' + (me.player ? me.player.name : pid) + '! 🎉');
+}
+
+async function submitPick(){
+  if (!sel || !me.player || !db.week) return;
+  const wk = db.week.week;
+  const id = me.pid + '_w' + wk;
+  const btn = document.getElementById('submitBtn');
+  if (btn) btn.disabled = true;
+  let error = null;
+  if (db.myPick){
+    ({ error } = await sb.from('picks').update({ team: sel }).eq('id', id));
+  } else {
+    ({ error } = await sb.from('picks').insert({ id, pid: me.pid, week: wk, team: sel, uid: session.user.id }));
+    if (error && (error.code === '23505')){ // raced our own earlier insert
+      ({ error } = await sb.from('picks').update({ team: sel }).eq('id', id));
+    }
+  }
+  if (error){
+    const msg = /row-level security/i.test(error.message)
+      ? 'The league server refused this pick — the game may have kicked off, or you’ve already used that team.'
+      : error.message;
+    toast('❌ ' + msg);
+    await loadAll(); render();
+    return;
+  }
+  await loadAll();
+  sel = null;
+  render();
+  toast('✅ Locked in: ' + (TEAM_NAMES[db.myPick && db.myPick.team] || sel) + ' — you can change it until kickoff');
+}
+
+// ================= demo mode =================
+function loadDemo(){
+  const t = h => new Date(Date.now() + h * 3600e3).toISOString();
+  db.league = {config:{leagueName:'Mehrle Survivor (DEMO)', seasonYear:2026, entryFee:10},
+    state:{pot:{entry:700, bb:0, total:700}, aliveCount:3, lastApplied:2,
+      recap:'🏈 Demo recap — week 2 results…',
+      players:{demo_you:{name:'Demo You', alive:true, picks:{1:{team:'DEN', outcome:'W'},2:{team:'ARI', outcome:'W'}}}}}};
+  db.players = [
+    {pid:'demo_you', name:'Demo You', claim_uid:'me', alive:true, used_teams:['DEN','ARI']},
+    {pid:'demo_amy', name:'Amy (demo)', claim_uid:null, alive:true, used_teams:[]},
+    {pid:'demo_joe', name:'Joe (demo)', claim_uid:null, alive:false, elim_week:2, used_teams:[]},
+  ];
+  db.week = {week:3, first_kickoff:t(2),
+    games:[['CIN','CLE',t(2)],['DEN','KC',t(5)],['DAL','PHI',t(-1)],['BUF','MIA',t(26)]],
+    kicks:{CIN:t(2), CLE:t(2), DEN:t(5), KC:t(5), DAL:t(-1), PHI:t(-1), BUF:t(26), MIA:t(26)}};
+  me.pid = 'demo_you'; me.player = db.players[0];
+  db.myPick = null;
+  session = {user:{id:'me'}};
+}
+
+// ================= render =================
+function render(){
+  const app = document.getElementById('app');
+  const cfg = (db.league && db.league.config) || {};
+  document.getElementById('hName').textContent = cfg.leagueName || 'Mehrle Survivor';
+  document.title = cfg.leagueName || 'Mehrle Survivor';
+  const who = document.getElementById('hWho');
+  who.innerHTML = me.player ? esc(me.player.name) + ' · <a href="#" id="switchLink">switch</a>' : '';
+  document.getElementById('foot').textContent = DEMO ? 'DEMO MODE — nothing is saved' :
+    'Picks lock at each game’s kickoff. Problems? Text Noah.';
+
+  if (!me.player){ app.innerHTML = renderClaim(); wire(); return; }
+
+  let h = '';
+  const st = (db.league && db.league.state) || {};
+  const meState = (st.players || {})[me.pid] || {};
+  const alive = me.player.alive;
+  h += '<div class="statusband ' + (alive ? 'alive' : 'out') + '"><div>' +
+    (alive ? '💚 You’re ALIVE' : '💀 You’re OUT' + (me.player.elim_week ? ' — week ' + me.player.elim_week : '')) +
+    '<div class="sub">' + (alive
+      ? esc((st.aliveCount != null ? st.aliveCount + ' of ' + Object.keys(st.players || {}).length + ' still standing' : ''))
+      : 'Ask Noah about a buyback — it might not be over.') + '</div></div>' +
+    (st.pot ? '<div style="text-align:right">' + money(st.pot.total) + '<div class="sub">pot</div></div>' : '') + '</div>';
+
+  if (alive) h += renderPickCard();
+  h += renderHistory(meState);
+  h += renderLeague(st);
+  app.innerHTML = h;
+  wire();
+}
+
+function renderClaim(){
+  let h = '<div class="card"><h2>Who are you?</h2>';
+  if (!db.players.length){
+    h += '<p class="muted">The roster hasn’t been published yet — check back soon, or text Noah.</p></div>';
+    return h;
+  }
+  h += '<p class="muted">Tap your name to claim it on this phone. One phone per person — if you switch phones, Noah can reset you.</p>' +
+    '<input type="text" id="nameFilter" placeholder="Search your name…" autocomplete="off">' +
+    '<div id="nameList">';
+  for (const p of db.players){
+    const takenByOther = p.claim_uid && (!session || p.claim_uid !== session.user.id);
+    h += '<button type="button" class="namebtn' + (takenByOther ? ' taken' : '') + '" data-pid="' + esc(p.pid) + '"' +
+      (takenByOther ? ' data-taken="1"' : '') + '>' + esc(p.name) +
+      '<span class="tag">' + (takenByOther ? 'claimed' : (p.alive ? '' : 'out wk' + (p.elim_week || '?'))) + '</span></button>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderPickCard(){
+  if (!db.week){
+    return '<div class="card"><h2>This week</h2><p class="muted">No week is open for picks yet — Noah publishes the schedule after grading. Check back soon.</p></div>';
+  }
+  const wk = db.week, now = Date.now();
+  const used = new Set(me.player.used_teams || []);
+  let h = '<div class="card"><h2>Week ' + wk.week + ' — pick your winner</h2>';
+  if (db.myPick){
+    const kicked = wk.kicks[db.myPick.team] && new Date(wk.kicks[db.myPick.team]).getTime() <= now;
+    h += '<div class="pickedbanner">Your pick: <b>' + esc(TEAM_NAMES[db.myPick.team] || db.myPick.team) + '</b>' +
+      (kicked ? ' — locked (game started) 🔒' : ' — tap another team to change it before kickoff') + '</div>';
+  } else {
+    h += '<div class="err">⏰ No pick yet! If you don’t pick before the games, you’re out.</div>';
+  }
+  const games = (wk.games && wk.games.length) ? wk.games : Object.keys(wk.kicks || {}).sort().map(t => [t, null, wk.kicks[t]]);
+  for (const g of games){
+    const [away, home, iso] = g;
+    const kicked = new Date(iso).getTime() <= now;
+    h += '<div class="game">';
+    h += teamBtn(away, used, kicked);
+    h += '<span class="at">@</span>';
+    h += home ? teamBtn(home, used, kicked) : '';
+    h += '<span class="when">' + (kicked ? 'started' : esc(fmtKick(iso))) + '</span>';
+    h += '</div>';
+  }
+  h += '<div class="submitbar"><button type="button" class="big" id="submitBtn"' + (sel ? '' : ' disabled') + '>' +
+    (sel ? (db.myPick ? 'Change pick to ' : 'Lock in ') + (TEAM_NAMES[sel] || sel) : (db.myPick ? 'Tap a team to change your pick' : 'Tap a team above')) +
+    '</button></div>';
+  h += '<p class="muted">Teams you’ve already used are crossed out. Games that started are locked. The server enforces all of this — no take-backs after kickoff.</p></div>';
+  return h;
+}
+
+function teamBtn(abbr, used, kicked){
+  if (!abbr) return '';
+  const isSel = sel === abbr;
+  const isMine = db.myPick && db.myPick.team === abbr;
+  let cls = 'team';
+  if (isSel) cls += ' sel';
+  if (used.has(abbr)) cls += ' used';
+  else if (kicked) cls += ' locked';
+  if (isMine) cls += ' mypick';
+  const dis = used.has(abbr) || kicked;
+  return '<button type="button" class="' + cls + '" data-team="' + esc(abbr) + '"' + (dis ? ' data-dis="1"' : '') + '>' +
+    esc(TEAM_NAMES[abbr] || abbr) + (isMine ? ' ✓' : '') + '</button>';
+}
+
+function renderHistory(meState){
+  const picks = meState.picks || {};
+  const weeks = Object.keys(picks).map(Number).sort((a,b) => a - b);
+  if (!weeks.length) return '';
+  let h = '<div class="card"><h2>Your season</h2><div class="hist">';
+  for (const w of weeks){
+    const p = picks[w];
+    h += '<span class="' + esc(p.outcome || '') + '">W' + w + ' ' + esc(TEAM_NAMES[p.team] || p.team || '—') + '</span>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderLeague(st){
+  let h = '<div class="card"><h2>The league</h2>';
+  if (st.pot){
+    h += '<div class="potline"><span>Pot</span><b>' + money(st.pot.total) + '</b></div>' +
+      '<div class="potline muted"><span>' + money(st.pot.entry) + ' entries + ' + money(st.pot.bb) + ' buybacks</span>' +
+      '<span class="count">' + (st.aliveCount != null ? st.aliveCount + ' alive' : '') + '</span></div>';
+  }
+  if (st.recap) h += '<details style="margin:8px 0"><summary class="muted" style="cursor:pointer">Last week’s recap</summary><pre style="white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--dim)">' + esc(st.recap) + '</pre></details>';
+  const rows = db.players.map(p => '<div class="standrow"><span>' + esc(p.name) + '</span><span class="st ' +
+    (p.alive ? 'alive">ALIVE' : 'out">OUT' + (p.elim_week ? ' wk' + p.elim_week : '')) + '</span></div>').join('');
+  h += '<details><summary class="muted" style="cursor:pointer">Everyone (' + db.players.length + ')</summary>' + rows + '</details>';
+  h += '</div>';
+  return h;
+}
+
+// ================= events =================
+function wire(){
+  const sw = document.getElementById('switchLink');
+  if (sw) sw.onclick = e => {
+    e.preventDefault();
+    if (!confirm('Switch player? (Your claim stays yours — this just lets you look at the claim screen.)')) return;
+    me.pid = null; me.player = null; localStorage.removeItem('survivor_pid');
+    render();
+  };
+  const filter = document.getElementById('nameFilter');
+  if (filter) filter.oninput = () => {
+    const q = filter.value.toLowerCase();
+    document.querySelectorAll('#nameList .namebtn').forEach(b => {
+      b.style.display = b.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+  };
+  document.querySelectorAll('.namebtn').forEach(b => b.onclick = () => {
+    if (b.dataset.taken){ toast('Already claimed on another phone — ask Noah to reset it if that’s you.'); return; }
+    if (!confirm('Claim "' + b.textContent.replace(/claimed|out wk\d*/,'').trim() + '" as YOU on this phone?')) return;
+    if (DEMO){ toast('Demo mode — claiming disabled'); return; }
+    claim(b.dataset.pid);
+  });
+  document.querySelectorAll('button.team').forEach(b => b.onclick = () => {
+    if (b.dataset.dis){
+      toast(b.classList.contains('used') ? 'You already used that team this season' : 'That game already kicked off');
+      return;
+    }
+    sel = (sel === b.dataset.team) ? null : b.dataset.team;
+    render();
+  });
+  const sub = document.getElementById('submitBtn');
+  if (sub) sub.onclick = () => {
+    if (DEMO){ db.myPick = {team: sel}; me.player.used_teams; sel = null; render(); toast('✅ (demo) pick saved'); return; }
+    submitPick();
+  };
+}
+
+// ================= boot =================
+(async function(){
+  try{
+    if (DEMO){ loadDemo(); render(); return; }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    await ensureSession();
+    await loadAll();
+    render();
+    // refresh data when the app comes back to foreground (phones)
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden){ try{ await loadAll(); render(); }catch(e){} }
+    });
+  }catch(err){
+    document.getElementById('app').innerHTML =
+      '<div class="err">Couldn’t load the league (' + esc(err.message || err) + ').<br>Check your connection and pull to refresh — or text Noah.</div>';
+  }
+})();
+</script>
+</body>
+</html>
