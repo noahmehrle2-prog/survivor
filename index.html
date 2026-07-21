@@ -19,6 +19,9 @@ header{padding:16px 18px 10px;display:flex;align-items:baseline;justify-content:
 header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.01em}
 header .who{font-size:13px;color:var(--dim)}
 header .who a{color:var(--blue);text-decoration:none}
+.sectionnav{max-width:560px;margin:0 auto 12px;padding:0 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.sectionnav button{min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--dim);font-weight:700;cursor:pointer}
+.sectionnav button.on{background:rgba(96,165,250,.14);border-color:var(--blue);color:var(--blue)}
 main{max-width:560px;margin:0 auto;padding:0 14px 40px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
 .card h2{margin:0 0 10px;font-size:15px}
@@ -45,6 +48,16 @@ border-radius:10px;padding:13px 14px;font-size:15px;margin-bottom:8px;cursor:poi
 .namebtn.taken{opacity:.45}
 .namebtn .tag{float:right;font-size:11px;color:var(--dim)}
 input[type=text],input[type=email],input[type=tel]{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:12px;font-size:16px;margin-bottom:10px}
+.fieldlabel{display:block;font-size:13px;font-weight:700;margin:11px 0 5px}
+.paybox{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.35);border-radius:12px;padding:14px;margin:14px 0}
+.venmo{display:block;text-align:center;text-decoration:none;background:#3d95ce;color:white;border-radius:11px;padding:13px 12px;font-weight:800;margin:10px 0}
+.checkrow{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:12px 0}
+.checkrow input{width:20px;height:20px;flex:none;margin-top:1px}
+.boardrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.boardrow:last-child{border-bottom:none}.boardrow .player{font-weight:650}.boardrow .pick{text-align:right;font-size:13px;color:var(--dim)}
+.boardrow .pick.live{color:var(--green);font-weight:750}.boardtools{display:flex;gap:8px;align-items:center;margin:10px 0 4px}
+.boardtools select{margin-left:auto;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px}
+.mini{width:auto!important;padding:9px 12px!important;font-size:13px!important}
 .hist{display:flex;flex-wrap:wrap;gap:6px}
 .hist span{border-radius:8px;padding:5px 9px;font-size:12px;font-weight:600;background:var(--card2);border:1px solid var(--line)}
 .hist span.W{background:rgba(74,222,128,.15);color:var(--green)}
@@ -69,6 +82,7 @@ footer{max-width:560px;margin:0 auto;padding:8px 18px 30px;color:var(--dim);font
   <h1>🏈 <span id="hName">Mehrle Survivor</span></h1>
   <div class="who" id="hWho"></div>
 </header>
+<nav class="sectionnav" id="sectionNav" aria-label="Pool sections"></nav>
 <main id="app"><div class="spin">Loading…</div></main>
 <footer id="foot"></footer>
 <div id="toast"></div>
@@ -78,6 +92,7 @@ footer{max-width:560px;margin:0 auto;padding:8px 18px 30px;color:var(--dim);font
 const SUPABASE_URL = "https://inbgusprbxtvmdpeqksn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluYmd1c3ByYnh0dm1kcGVxa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTk2OTMsImV4cCI6MjA5OTgzNTY5M30.QUM68361lXHWqetmzA-LFOu6W33Goj-sZp5JwJUpZXs";
 const DEMO = /(\?|&)demo=1/.test(location.search);
+const VENMO_URL = 'https://venmo.com/u/Noah-Mehrle';
 
 const TEAM_NAMES = {ARI:'Cardinals',ATL:'Falcons',BAL:'Ravens',BUF:'Bills',CAR:'Panthers',CHI:'Bears',
 CIN:'Bengals',CLE:'Browns',DAL:'Cowboys',DEN:'Broncos',DET:'Lions',GB:'Packers',HOU:'Texans',IND:'Colts',
@@ -87,13 +102,17 @@ TEN:'Titans',WSH:'Commanders'};
 
 // ================= state =================
 let sb = null, session = null;
-let db = { league:null, players:[], week:null, myPick:null };
+let db = { league:null, players:[], week:null, myPick:null, board:[], boardWeek:null };
 let me = { pid: localStorage.getItem('survivor_pid') || null, player:null };
 let sel = null;      // currently tapped team
-let view = 'home';
+const requestedScreen = new URLSearchParams(location.search).get('screen');
+let view = ['join','home','board'].indexOf(requestedScreen) >= 0
+  ? requestedScreen : (me.pid ? 'home' : 'join');
+let boardSort = 'player';
 let authMode = 'legacy_claim';
 const pendingLoginEmail = sessionStorage.getItem('survivor_login_email') || '';
 let loginState = {email:pendingLoginEmail, sent:!!pendingLoginEmail, busy:false, message:''};
+let signupState = {busy:false, done:false, email:'', message:'', form:{name:'',email:'',phone:''}};
 
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function toast(msg){
@@ -106,6 +125,19 @@ function fmtKick(iso){
   return d.toLocaleString('en-US', {weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short'}).replace(/,/g, '');
 }
 function money(n){ return '$' + (+n || 0).toLocaleString(); }
+function getSignupToken(){
+  const yr = (db.league && db.league.config && db.league.config.seasonYear) || 'current';
+  const key = 'survivor_signup_token_' + String(yr);
+  let token = localStorage.getItem(key) || '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)){
+    token = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+        });
+    localStorage.setItem(key, token);
+  }
+  return token;
+}
 
 // ================= data =================
 function isAnonymousSession(s){ return !!(s && s.user && (s.user.is_anonymous === true || !s.user.email)); }
@@ -156,6 +188,46 @@ async function prepareSession(){
   }
 }
 
+async function loadPickBoard(){
+  db.board = []; db.boardWeek = null;
+  if (!session) return;
+  const { data, error } = await sb.rpc('get_pick_board', {p_week:null});
+  if (error) throw error;
+  db.board = Array.isArray(data) ? data : [];
+  db.boardWeek = db.board.length ? db.board[0].board_week : null;
+}
+
+async function submitSignupRequest(name, email, phone, venmoSent){
+  name = String(name || '').trim();
+  email = String(email || '').trim().toLowerCase();
+  phone = String(phone || '').trim();
+  if (name.length < 2) throw new Error('Enter your full name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.');
+  if (phone.replace(/\D/g, '').length < 10) throw new Error('Enter a valid mobile number.');
+  if (!venmoSent) throw new Error('Confirm that you sent the Venmo entry fee.');
+  signupState.form = {name, email, phone};
+  signupState.busy = true; signupState.message = ''; render();
+  if (DEMO){
+    signupState = {busy:false, done:true, email, message:'', form:{name:'',email:'',phone:''}}; render(); return;
+  }
+  let temporarySession = false;
+  if (!session){
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) throw error;
+    session = data.session; temporarySession = true;
+  }
+  const { error } = await sb.rpc('submit_signup_request', {
+    p_name:name, p_email:email, p_phone:phone, p_venmo_sent:true, p_client_token:getSignupToken()
+  });
+  if (error){
+    if (temporarySession){ try{ await sb.auth.signOut(); }catch(e){} session = null; }
+    throw error;
+  }
+  signupState = {busy:false, done:true, email, message:'', form:{name:'',email:'',phone:''}};
+  if (temporarySession){ try{ await sb.auth.signOut(); }catch(e){} session = null; }
+  render();
+}
+
 async function loadAll(){
   let mapped = null;
   if (authMode === 'email_otp'){
@@ -196,6 +268,7 @@ async function loadAll(){
     if (error) throw error;
     db.myPick = data || null;
   }
+  await loadPickBoard();
 }
 
 async function sendLoginCode(email){
@@ -242,6 +315,7 @@ async function claim(pid){
     return;
   }
   me.pid = pid; localStorage.setItem('survivor_pid', pid);
+  view = 'home';
   await loadAll(); render();
   toast('Welcome, ' + (me.player ? me.player.name : pid) + '! 🎉');
 }
@@ -299,7 +373,14 @@ function loadDemo(){
     kicks:{CIN:t(2), CLE:t(2), DEN:t(5), KC:t(5), DAL:t(-1), PHI:t(-1), BUF:t(26), MIA:t(26)}};
   me.pid = 'demo_you'; me.player = db.players[0];
   db.myPick = null;
+  db.boardWeek = 3;
+  db.board = [
+    {board_week:3,pid:'demo_you',player_name:'Demo You',alive:true,team:null,pick_status:'hidden',is_self:true},
+    {board_week:3,pid:'demo_amy',player_name:'Amy (demo)',alive:true,team:'DAL',pick_status:'revealed',is_self:false},
+    {board_week:3,pid:'demo_joe',player_name:'Joe (demo)',alive:false,elim_week:2,team:null,pick_status:'out',is_self:false},
+  ];
   session = {user:{id:'me'}};
+  if (!requestedScreen) view = 'home';
 }
 
 // ================= render =================
@@ -313,6 +394,10 @@ function render(){
     + (authMode === 'email_otp' ? 'sign out' : 'switch') + '</a>' : '';
   document.getElementById('foot').textContent = DEMO ? 'DEMO MODE — nothing is saved' :
     'Picks lock at each game’s kickoff. Problems? Text Noah.';
+
+  renderSectionNav();
+  if (view === 'join'){ app.innerHTML = renderSignup(); wire(); return; }
+  if (view === 'board'){ app.innerHTML = renderPickBoard(); wire(); return; }
 
   if (!me.player){ app.innerHTML = authMode === 'email_otp' ? renderLogin() : renderClaim(); wire(); return; }
 
@@ -341,6 +426,78 @@ function render(){
   h += renderLeague(st);
   app.innerHTML = h;
   wire();
+}
+
+function renderSectionNav(){
+  const items = [['join','Join'],['home','My Pick'],['board','League Picks']];
+  document.getElementById('sectionNav').innerHTML = items.map(x =>
+    '<button type="button" class="navbtn' + (view === x[0] ? ' on' : '') + '" data-view="' + x[0] + '">' + x[1] + '</button>'
+  ).join('');
+}
+
+function renderSignup(){
+  const cfg = (db.league && db.league.config) || {};
+  const fee = cfg.entryFee != null ? +cfg.entryFee : 10;
+  if (signupState.done){
+    return '<div class="card"><div class="ok"><b>Entry received.</b><br>Noah will review your information and verify the Venmo payment.</div>'
+      + '<h2>What happens next</h2><p class="muted">Your payment checkbox is a confirmation from you—not an automatic payment check. '
+      + 'Once Noah adds and approves you, use <b>My Pick</b> to claim or sign in to your account.</p>'
+      + '<button type="button" class="big sec" id="afterSignupMyPick">Go to My Pick</button></div>';
+  }
+  const f = signupState.form || {};
+  let h = '<div class="card"><h2>Join ' + esc(cfg.leagueName || 'Mehrle Survivor') + '</h2>'
+    + '<p class="muted">Enter your own contact information so Noah can add you to the pool and reach you about picks.</p>';
+  if (signupState.message) h += '<div class="err">' + esc(signupState.message) + '</div>';
+  h += '<form id="signupForm">'
+    + '<label class="fieldlabel" for="signupName">Full name</label>'
+    + '<input type="text" id="signupName" value="' + esc(f.name || '') + '" autocomplete="name" maxlength="80" placeholder="First and last name" required>'
+    + '<label class="fieldlabel" for="signupEmail">Email</label>'
+    + '<input type="email" id="signupEmail" value="' + esc(f.email || '') + '" autocomplete="email" maxlength="254" placeholder="you@example.com" required>'
+    + '<label class="fieldlabel" for="signupPhone">Mobile phone</label>'
+    + '<input type="tel" id="signupPhone" value="' + esc(f.phone || '') + '" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="(513) 555-0123" required>'
+    + '<p class="muted">Your email and phone stay private and are only shown to Noah.</p>'
+    + '<div class="paybox"><b>Entry fee: ' + money(fee) + '</b><br><span class="muted">Send it to <b>@Noah-Mehrle</b> and put your full name in the Venmo note.</span>'
+    + '<a class="venmo" href="' + esc(VENMO_URL) + '" target="_blank" rel="noopener">Open Venmo @Noah-Mehrle</a>'
+    + '<label class="checkrow"><input type="checkbox" id="venmoSent" required><span><b>I confirm I sent the ' + money(fee) + ' entry fee to @Noah-Mehrle.</b><br>'
+    + '<span class="muted">Noah will still verify the payment before marking you paid.</span></span></label></div>'
+    + '<button type="submit" class="big"' + (signupState.busy ? ' disabled' : '') + '>' + (signupState.busy ? 'Sending…' : 'Send my entry') + '</button></form></div>';
+  return h;
+}
+
+function renderPickBoard(){
+  if (!me.player){
+    return '<div class="card"><h2>League picks</h2><p class="muted">The pick board is private to pool members. Open <b>My Pick</b> and claim your name or sign in first.</p>'
+      + '<button type="button" class="big sec" id="goMyPick">Go to My Pick</button></div>';
+  }
+  if (!db.board.length){
+    return '<div class="card"><h2>League picks</h2><p class="muted">There isn’t a published pick week yet. Check back after Noah publishes the schedule.</p>'
+      + '<button type="button" class="big sec mini" id="boardRefresh">Refresh</button></div>';
+  }
+  const rows = db.board.slice().sort((a,b) => {
+    if (boardSort === 'team'){
+      const at = a.team ? (TEAM_NAMES[a.team] || a.team) : 'zzzz';
+      const bt = b.team ? (TEAM_NAMES[b.team] || b.team) : 'zzzz';
+      const byTeam = at.localeCompare(bt);
+      if (byTeam) return byTeam;
+    }
+    return String(a.player_name || '').localeCompare(String(b.player_name || ''));
+  });
+  let h = '<div class="card"><h2>Week ' + esc(db.boardWeek) + ' league picks</h2>'
+    + '<p class="muted">Other people’s picks unlock only when <b>that team’s game starts</b>. Before kickoff, a saved pick and no pick look exactly the same.</p>'
+    + '<div class="boardtools"><button type="button" class="big sec mini" id="boardRefresh">Refresh</button>'
+    + '<label class="muted" for="boardSort">Sort</label><select id="boardSort"><option value="player"' + (boardSort === 'player' ? ' selected' : '') + '>Player</option>'
+    + '<option value="team"' + (boardSort === 'team' ? ' selected' : '') + '>Revealed team</option></select></div>';
+  for (const r of rows){
+    let pick = 'Hidden until kickoff', cls = '';
+    const ownCurrentPick = r.is_self && db.week && db.week.week === r.board_week && db.myPick;
+    if (r.pick_status === 'revealed' && r.team){ pick = (TEAM_NAMES[r.team] || r.team) + ' (' + r.team + ')'; cls = ' live'; }
+    else if (ownCurrentPick){ pick = 'Your pick: ' + (TEAM_NAMES[db.myPick.team] || db.myPick.team); cls = ' live'; }
+    else if (r.pick_status === 'missing') pick = 'No pick';
+    else if (r.pick_status === 'out') pick = 'Out' + (r.elim_week ? ' — week ' + r.elim_week : '');
+    h += '<div class="boardrow"><span class="player">' + esc(r.player_name) + (r.is_self ? ' <span class="muted">(you)</span>' : '') + '</span>'
+      + '<span class="pick' + cls + '">' + esc(pick) + '</span></div>';
+  }
+  return h + '</div>';
 }
 
 function renderLogin(){
@@ -457,6 +614,42 @@ function renderLeague(st){
 
 // ================= events =================
 function wire(){
+  document.querySelectorAll('.navbtn').forEach(b => b.onclick = async () => {
+    view = b.dataset.view;
+    if (view === 'board' && me.player && !DEMO){
+      try{ await loadPickBoard(); }catch(err){ toast('Couldn’t refresh league picks: ' + (err.message || err)); }
+    }
+    render();
+  });
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm) signupForm.onsubmit = e => {
+    e.preventDefault();
+    submitSignupRequest(
+      document.getElementById('signupName').value,
+      document.getElementById('signupEmail').value,
+      document.getElementById('signupPhone').value,
+      document.getElementById('venmoSent').checked
+    ).catch(err => {
+      signupState.busy = false;
+      const msg = String(err && err.message || '');
+      signupState.message = /^(Enter|Confirm)/.test(msg)
+        ? msg : 'Your entry could not be sent. Check your connection and try again, or text Noah.';
+      render();
+    });
+  };
+  const afterSignupMyPick = document.getElementById('afterSignupMyPick');
+  if (afterSignupMyPick) afterSignupMyPick.onclick = () => { view = 'home'; render(); };
+  const goMyPick = document.getElementById('goMyPick');
+  if (goMyPick) goMyPick.onclick = () => { view = 'home'; render(); };
+  const boardRefresh = document.getElementById('boardRefresh');
+  if (boardRefresh) boardRefresh.onclick = async () => {
+    boardRefresh.disabled = true;
+    try{ if (!DEMO) await loadPickBoard(); toast('League picks refreshed'); }
+    catch(err){ toast('Couldn’t refresh league picks: ' + (err.message || err)); }
+    render();
+  };
+  const boardSortEl = document.getElementById('boardSort');
+  if (boardSortEl) boardSortEl.onchange = () => { boardSort = boardSortEl.value; render(); };
   const so = document.getElementById('signOutLink');
   if (so) so.onclick = e => {
     e.preventDefault();
@@ -551,6 +744,13 @@ function wire(){
     document.addEventListener('visibilitychange', async () => {
       if (!document.hidden && (authMode !== 'email_otp' || session)){ try{ await loadAll(); render(); }catch(e){} }
     });
+    // Time passing does not emit a database event, so refresh the open board once
+    // a minute to reveal games that have just kicked off.
+    setInterval(async () => {
+      if (view === 'board' && me.player && !document.hidden){
+        try{ await loadPickBoard(); render(); }catch(e){}
+      }
+    }, 60000);
   }catch(err){
     document.getElementById('app').innerHTML =
       '<div class="err">Couldn’t load the league (' + esc(err.message || err) + ').<br>Check your connection and pull to refresh — or text Noah.</div>';
