@@ -106,8 +106,12 @@ let db = { league:null, players:[], week:null, myPick:null, board:[], boardWeek:
 let me = { pid: localStorage.getItem('survivor_pid') || null, player:null };
 let sel = null;      // currently tapped team
 const requestedScreen = new URLSearchParams(location.search).get('screen');
-let view = ['join','home','board'].indexOf(requestedScreen) >= 0
-  ? requestedScreen : (me.pid ? 'home' : 'join');
+// Default to 'home'. Under legacy_claim a device with no survivor_pid is far more
+// often a ROSTERED player on a new/wiped phone than a brand-new entrant, and
+// landing them on the $10 Venmo form invites a second payment for an entry they
+// already bought. 'home' renders the claim list, which carries an explicit
+// "I'm new" route to Join for people who actually are.
+let view = ['join','home','board'].indexOf(requestedScreen) >= 0 ? requestedScreen : 'home';
 let boardSort = 'player';
 let authMode = 'legacy_claim';
 const pendingLoginEmail = sessionStorage.getItem('survivor_login_email') || '';
@@ -533,7 +537,13 @@ function renderClaim(){
       (takenByOther ? ' data-taken="1"' : '') + '>' + esc(p.name) +
       '<span class="tag">' + (takenByOther ? 'claimed' : (p.alive ? '' : 'out wk' + (p.elim_week || '?'))) + '</span></button>';
   }
-  h += '</div></div>';
+  h += '</div>';
+  // The two ways this list fails a real person, answered in place: their name is
+  // missing (they never joined) or it says "claimed" (old phone still holds it).
+  h += '<p class="muted" style="margin-top:14px">Don’t see your name? You haven’t joined yet — ' +
+    '<a href="#" id="claimGoJoin">enter the pool here</a>.<br>' +
+    'Name there but marked <b>claimed</b>? That’s your old phone. Text Noah and he’ll reset it — ' +
+    'don’t pay again.</p></div>';
   return h;
 }
 
@@ -641,6 +651,8 @@ function wire(){
   if (afterSignupMyPick) afterSignupMyPick.onclick = () => { view = 'home'; render(); };
   const goMyPick = document.getElementById('goMyPick');
   if (goMyPick) goMyPick.onclick = () => { view = 'home'; render(); };
+  const claimGoJoin = document.getElementById('claimGoJoin');
+  if (claimGoJoin) claimGoJoin.onclick = (e) => { e.preventDefault(); view = 'join'; render(); };
   const boardRefresh = document.getElementById('boardRefresh');
   if (boardRefresh) boardRefresh.onclick = async () => {
     boardRefresh.disabled = true;
@@ -752,8 +764,21 @@ function wire(){
       }
     }, 60000);
   }catch(err){
+    // Don't blame the player's phone. "Failed to fetch" here almost always means
+    // the backend is down (a paused free-tier project looks exactly like this),
+    // and telling 70 people to check their connection routes 70 texts to Noah.
+    const raw = String((err && err.message) || err || '');
+    const backendDown = /failed to fetch|networkerror|load failed|err_name_not_resolved/i.test(raw);
     document.getElementById('app').innerHTML =
-      '<div class="err">Couldn’t load the league (' + esc(err.message || err) + ').<br>Check your connection and pull to refresh — or text Noah.</div>';
+      '<div class="err"><b>' + (backendDown ? 'The league server isn’t responding.' : 'Couldn’t load the league.') + '</b><br>'
+      + (backendDown
+          ? 'This is on our end, not your phone — Noah has been having a look. Your pick and your entry are safe. Try again in a few minutes.'
+          : esc(raw))
+      + '</div>'
+      + '<button type="button" class="big sec" id="bootRetry">Try again</button>'
+      + '<p class="muted" style="margin-top:12px">Still stuck close to kickoff? Text Noah your pick — he can enter it by hand.</p>';
+    const retry = document.getElementById('bootRetry');
+    if (retry) retry.onclick = () => location.reload();
   }
 })();
 </script>
