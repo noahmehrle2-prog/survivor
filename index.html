@@ -91,7 +91,7 @@ footer{max-width:560px;margin:0 auto;padding:8px 18px 30px;color:var(--dim);font
 // ================= config =================
 const SUPABASE_URL = "https://inbgusprbxtvmdpeqksn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluYmd1c3ByYnh0dm1kcGVxa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTk2OTMsImV4cCI6MjA5OTgzNTY5M30.QUM68361lXHWqetmzA-LFOu6W33Goj-sZp5JwJUpZXs";
-const DEMO = /(\?|&)demo=1/.test(location.search);
+const DEMO = /(\?|&)demo=(1|picked|out|used|new)\b/.test(location.search);
 const VENMO_URL = 'https://venmo.com/u/Noah-Mehrle';
 
 const TEAM_NAMES = {ARI:'Cardinals',ATL:'Falcons',BAL:'Ravens',BUF:'Bills',CAR:'Panthers',CHI:'Bears',
@@ -361,25 +361,51 @@ async function submitPick(){
 }
 
 // ================= demo mode =================
+// ?demo=1 is the default (alive, hasn't picked). The other scenarios exist because
+// those are the screens that are hard to reason about in the abstract and impossible
+// to see in the real app until they happen to a real person mid-season:
+//   ?demo=picked  already locked a pick in
+//   ?demo=out     eliminated, one buyback offered
+//   ?demo=used    eliminated, buyback already spent — final
+//   ?demo=new     this phone has never claimed a name
 function loadDemo(){
   const t = h => new Date(Date.now() + h * 3600e3).toISOString();
+  const scenario = (new URLSearchParams(location.search).get('demo') || '1').toLowerCase();
+  const out = scenario === 'out', used = scenario === 'used';
+  const dead = out || used;
+  const me_state = {name:'Demo You', alive:!dead, picks:{1:{team:'DEN', outcome:'W'}, 2:{team:'ARI', outcome:dead ? 'L' : 'W'}}};
+  if (dead){
+    me_state.elimWeek = 2;
+    me_state.buybackUsed = used;
+    me_state.buybackEligible = out;
+    me_state.buybackPrice = out ? 30 : null;
+    me_state.buybackReentryWeek = out ? 3 : null;
+  }
   db.league = {config:{leagueName:'Mehrle Survivor (DEMO)', seasonYear:2026, entryFee:10},
-    state:{pot:{entry:700, bb:0, total:700}, aliveCount:3, lastApplied:2,
+    state:{pot:{entry:700, bb: out || used ? 30 : 0, total: out || used ? 730 : 700},
+      aliveCount: dead ? 2 : 3, lastApplied:2,
       recap:'🏈 Demo recap — week 2 results…',
-      players:{demo_you:{name:'Demo You', alive:true, picks:{1:{team:'DEN', outcome:'W'},2:{team:'ARI', outcome:'W'}}}}}};
+      players:{demo_you: me_state}}};
   db.players = [
-    {pid:'demo_you', name:'Demo You', claim_uid:'me', alive:true, used_teams:['DEN','ARI']},
+    {pid:'demo_you', name:'Demo You', claim_uid:'me', alive:!dead, elim_week: dead ? 2 : null, used_teams:['DEN','ARI']},
     {pid:'demo_amy', name:'Amy (demo)', claim_uid:null, alive:true, used_teams:[]},
     {pid:'demo_joe', name:'Joe (demo)', claim_uid:null, alive:false, elim_week:2, used_teams:[]},
   ];
   db.week = {week:3, first_kickoff:t(2),
     games:[['CIN','CLE',t(2)],['DEN','KC',t(5)],['DAL','PHI',t(-1)],['BUF','MIA',t(26)]],
     kicks:{CIN:t(2), CLE:t(2), DEN:t(5), KC:t(5), DAL:t(-1), PHI:t(-1), BUF:t(26), MIA:t(26)}};
-  me.pid = 'demo_you'; me.player = db.players[0];
-  db.myPick = null;
+  if (scenario === 'new'){
+    // never-claimed phone: this is the very first thing a real player sees
+    me.pid = null; me.player = null;
+    db.players[0].claim_uid = null;
+  } else {
+    me.pid = 'demo_you'; me.player = db.players[0];
+  }
+  db.myPick = scenario === 'picked' ? {team:'CIN', week:3} : null;
   db.boardWeek = 3;
   db.board = [
-    {board_week:3,pid:'demo_you',player_name:'Demo You',alive:true,team:null,pick_status:'hidden',is_self:true},
+    {board_week:3,pid:'demo_you',player_name:'Demo You',alive:!dead,elim_week: dead ? 2 : null,
+     team: scenario === 'picked' ? 'CIN' : null, pick_status: dead ? 'out' : 'hidden', is_self:true},
     {board_week:3,pid:'demo_amy',player_name:'Amy (demo)',alive:true,team:'DAL',pick_status:'revealed',is_self:false},
     {board_week:3,pid:'demo_joe',player_name:'Joe (demo)',alive:false,elim_week:2,team:null,pick_status:'out',is_self:false},
   ];
