@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#17130e">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Mehrle Survivor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.js"
+        integrity="sha384-hazsLVND17GNLVdtV19te6qbFT2YuLgl8SamcF+QR5eIOC+W4dGKrUNMxU1jH1zD" crossorigin="anonymous"></script>
+<style>
+/* ==========================================================================
+   MEHRLE SURVIVOR — "THE TICKET"
+   Art direction: a physical object. Manila card stock, ink stamps, punched
+   holes, perforations, a mark-your-X betting slip, a torn-off stub.
+   Light ground on purpose: a phone is its own light source in a bar, and
+   heavy black ink on cream is the highest-legibility combination there is
+   for a 68-year-old at arm's length. Dark UI thins strokes; paper doesn't.
+   No blur anywhere. Shadows are hard offsets, like a card lifted off a desk.
+   ========================================================================== */
+
+:root{
+  /* --- stock ---------------------------------------------------------- */
+  --desk:   #d8ceb2;   /* the bulletin board / desk under everything      */
+  --paper:  #f6f1e4;   /* card stock: every ticket, card and button face  */
+  --stock:  #ece3cd;   /* second tint: sunken rows, headers, slots        */
+  --knock:  #fbf7ed;   /* cream knockout on ink                          */
+  /* --- ink ------------------------------------------------------------ */
+  --ink:    #17130e;   /* press black, warm                               */
+  --ink-2:  #453c2f;   /* body prose                                      */
+  --dim:    #665c4a;   /* fine print (also consumed inline by the recap)  */
+  --rule:   #b6a884;   /* hairline rules, perforations                    */
+  --rule-2: #d8cdaf;   /* faint ledger rules                              */
+  --shadow: #bbad8d;   /* the hard offset shadow                          */
+  /* --- stamp pad ------------------------------------------------------ */
+  --red:    #a72820;
+  --red-t:  #f0dfd6;
+  --green:  #2c6142;
+  --green-t:#dfe8dc;
+  --blue:   #1c4f80;
+  --blue-t: #dde5ee;
+  --gold:   #7d5f0e;
+  /* --- type ----------------------------------------------------------- */
+  /* Condensed gothic for anything shouted. iOS resolves this to
+     HelveticaNeue-Condensed; if the condensed width is unavailable it falls
+     back to plain Helvetica Neue, which uppercased and tracked still reads
+     as press type rather than as a system default. */
+  --f-disp: "Arial Narrow","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --f-text: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --f-mono: ui-monospace,"SF Mono",SFMono-Regular,Menlo,Monaco,"Courier New",monospace;
+  /* perforation strip, reused everywhere */
+  --perf: repeating-linear-gradient(90deg,var(--rule) 0,var(--rule) 4px,transparent 4px,transparent 9px);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html{-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  color:var(--ink);
+  background-color:var(--desk);
+  /* paper grain: a hairline ruling you feel more than see */
+  background-image:repeating-linear-gradient(0deg,rgba(23,19,14,.030) 0,rgba(23,19,14,.030) 1px,transparent 1px,transparent 6px);
+  font:16px/1.5 var(--f-text);
+  padding-bottom:env(safe-area-inset-bottom);
+  color-scheme:light;
+}
+
+/* ==========================================================================
+   1 · MASTHEAD — the ink band printed across the top of the ticket
+   ========================================================================== */
+
+header{
+  background:var(--ink);
+  color:var(--knock);
+  padding:calc(14px + env(safe-area-inset-top)) 16px 13px;
+  display:flex;align-items:baseline;justify-content:space-between;
+  border-bottom:3px solid var(--red);
+}
+header h1{
+  margin:0;flex:1;min-width:0;padding-right:12px;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:22px;font-weight:800;line-height:1;
+  letter-spacing:.04em;text-transform:uppercase;
+  color:var(--knock);
+  /* deliberate mis-registration: the red plate is 1.5px off the black */
+  text-shadow:1.5px 1.5px 0 var(--red);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+header .who{
+  flex:none;text-align:right;white-space:nowrap;
+  font-family:var(--f-mono);font-size:10px;letter-spacing:.02em;
+  color:#a89c85;text-transform:uppercase;
+}
+header .who a{
+  color:var(--knock);text-decoration:none;
+  border-bottom:1px solid #7b7160;
+  padding:10px 0 2px;margin-left:2px;display:inline-block;
+}
+
+/* the ticket edge under the masthead */
+header + .sectionnav{position:relative}
+.sectionnav::before{
+  content:"";position:absolute;left:0;right:0;top:-1px;height:2px;
+  background-image:var(--perf);opacity:.55;
+}
+
+/* ==========================================================================
+   2 · SECTION NAV — three numbered card-stock tabs
+   ========================================================================== */
+
+.sectionnav{
+  max-width:560px;margin:0 auto 16px;padding:14px 14px 0;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  counter-reset:tab;
+}
+.sectionnav button,
+.sectionnav .navbtn{
+  counter-increment:tab;
+  min-height:52px;padding:6px 4px 7px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--stock);
+  border:2px solid var(--ink);border-radius:3px 3px 0 0;
+  color:var(--ink-2);
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:14px;font-weight:700;line-height:1.05;
+  letter-spacing:.05em;text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 3px 0 var(--shadow);
+  transform:translateY(2px);
+  transition:none;
+}
+.sectionnav button::before{
+  content:counter(tab,decimal-leading-zero);
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:.16em;margin-bottom:3px;opacity:.6;
+}
+.sectionnav button.on{
+  background:var(--ink);color:var(--knock);
+  box-shadow:0 3px 0 var(--red);
+  transform:translateY(0);
+}
+.sectionnav button.on::before{opacity:.85;color:#c9bda3}
+.sectionnav button:active{transform:translateY(3px);box-shadow:0 0 0 var(--shadow)}
+
+main{max-width:560px;margin:0 auto;padding:0 14px 44px}
+
+/* ==========================================================================
+   3 · CARD — a sheet of stock with a perforation printed near the head
+   ========================================================================== */
+
+.card{
+  position:relative;
+  background-color:var(--paper);
+  background-image:var(--perf);
+  background-repeat:no-repeat;
+  background-size:100% 2px;
+  background-position:0 7px;
+  border:2px solid var(--ink);
+  border-radius:0;
+  padding:20px 16px 16px;
+  margin-bottom:16px;
+  box-shadow:4px 4px 0 var(--shadow);
+}
+.card h2{
+  margin:0 0 12px;
+  padding-bottom:7px;
+  border-bottom:2px solid var(--ink);
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:19px;font-weight:800;line-height:1.1;
+  letter-spacing:.045em;text-transform:uppercase;
+}
+.card p{margin:10px 0}
+.card > *:last-child{margin-bottom:0}
+
+/* ==========================================================================
+   4 · STATUS BAND — the validated stub: notched, stamped, priced
+   ========================================================================== */
+
+.statusband{
+  position:relative;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--paper);
+  border:2px solid var(--ink);
+  border-radius:0;
+  padding:16px 18px;
+  margin-bottom:16px;
+  box-shadow:4px 4px 0 var(--shadow);
+}
+/* the two bites out of the stub's edges */
+.statusband::before,
+.statusband::after{
+  content:"";position:absolute;top:50%;
+  width:20px;height:20px;margin-top:-10px;
+  background:var(--desk);
+  border:2px solid var(--ink);
+  border-radius:50%;
+}
+.statusband::before{left:-12px}
+.statusband::after{right:-12px}
+
+.statusband > div{position:relative;z-index:1}
+
+/* the stamp block */
+.statusband > div:first-child{
+  flex:1 1 auto;min-width:0;
+  padding:7px 10px 8px;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:23px;font-weight:800;line-height:1.02;
+  letter-spacing:.03em;text-transform:uppercase;
+}
+.statusband.alive > div:first-child{
+  color:var(--green);
+  border:2.5px solid var(--green);
+  background:var(--green-t);
+  transform:rotate(-1.1deg);
+}
+.statusband.out > div:first-child{
+  color:var(--red);
+  border:2.5px solid var(--red);
+  background:var(--red-t);
+  transform:rotate(1.3deg);
+}
+.statusband .sub{
+  display:block;margin-top:5px;
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:11px;font-weight:500;line-height:1.45;
+  letter-spacing:.01em;text-transform:none;
+  color:var(--ink-2);
+}
+/* the pot, printed like a face value */
+.statusband > div + div{
+  flex:none;
+  font-family:var(--f-mono);font-size:23px;font-weight:700;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  color:var(--ink);
+}
+.statusband > div + div .sub{
+  text-align:right;letter-spacing:.18em;text-transform:uppercase;
+  font-size:9px;color:var(--dim);margin-top:3px;
+}
+
+/* ==========================================================================
+   5 · PICK SLIP — filed-pick banner
+   ========================================================================== */
+
+.pickedbanner{
+  background:var(--blue-t);
+  border:2px solid var(--ink);
+  border-left-width:10px;
+  border-left-color:var(--blue);
+  border-radius:0;
+  padding:11px 13px;
+  margin:0 0 14px;
+  font-family:var(--f-mono);
+  font-size:12px;line-height:1.5;
+  color:var(--ink-2);
+}
+.pickedbanner b{
+  display:block;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:22px;font-weight:800;line-height:1.05;
+  letter-spacing:.03em;text-transform:uppercase;
+  color:var(--ink);margin:2px 0 3px;
+}
+
+/* ==========================================================================
+   6 · THE SCHEDULE — a locker-room assignment sheet, bled to the sheet edge
+   ========================================================================== */
+
+.game{
+  margin:0 -16px;
+  border-top:2px solid var(--ink);
+  border-bottom:2px solid var(--ink);
+  border-radius:0;
+  background:var(--paper);
+  overflow:visible;
+}
+.game + .game{margin-top:-2px}
+
+.game .gwhen{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 16px;
+  background:var(--stock);
+  border-bottom:1.5px solid var(--rule);
+  color:var(--ink-2);
+  font-family:var(--f-mono);
+  font-size:10px;font-weight:700;
+  letter-spacing:.11em;text-transform:uppercase;
+}
+.game .gwhen .dot{
+  width:7px;height:7px;flex:none;border-radius:0;   /* squares, not dots */
+  background:var(--ink-2);
+}
+.game.islive .gwhen{
+  background:var(--ink);
+  color:var(--knock);
+  border-bottom-color:var(--ink);
+}
+.game.islive .gwhen .dot{
+  background:var(--red);
+  animation:blink 1.3s steps(1,end) infinite;
+}
+@keyframes blink{0%,60%{opacity:1}61%,100%{opacity:.25}}
+
+.game .grow{display:flex;align-items:stretch;position:relative}
+
+/* the perforation between the two teams — you tear off one side */
+.game .at{
+  align-self:stretch;flex:none;
+  width:18px;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:.06em;color:var(--dim);
+  padding:0;
+}
+.game .at::before,
+.game .at::after{
+  content:"";position:absolute;left:50%;margin-left:-1px;
+  width:0;border-left:2px dashed var(--rule);
+}
+.game .at::before{top:0;height:calc(50% - 12px)}
+.game .at::after{bottom:0;height:calc(50% - 12px)}
+
+/* ==========================================================================
+   7 · TEAM BUTTONS — mark your X in the box
+   ========================================================================== */
+
+/* Layout note: a 390px phone leaves ~170px per team cell. The mark box sits on
+   the LEFT (where a bet slip's box goes) and the USED / YOUR PICK label is
+   forced onto its own bottom strip, so the club name never has to compete for
+   width with a label. Naming the team you are about to bet $10 on beats every
+   other element in this row. */
+button.team{
+  flex:1;min-width:0;position:relative;
+  display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:8px;
+  min-height:64px;
+  padding:11px 9px 11px 14px;
+  background:transparent;
+  border:0;border-radius:0;
+  color:var(--ink);
+  font-family:var(--f-text);font-size:15px;
+  text-align:left;cursor:pointer;
+  overflow:hidden;
+}
+/* club colour lives as a printed spine down the left edge */
+button.team::before{
+  content:"";position:absolute;left:0;top:6px;bottom:6px;
+  width:7px;background:var(--tc,#5b5348);
+}
+/* the mark box — first thing in the row */
+button.team::after{
+  content:"";order:-1;flex:none;
+  width:26px;height:26px;
+  border:2px solid var(--ink);
+  background:#fff;
+  font-family:var(--f-mono);font-size:18px;font-weight:700;
+  line-height:22px;text-align:center;color:var(--ink);
+}
+button.team .logo{
+  width:27px;height:27px;flex:none;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;
+  border:1.5px solid var(--ink);
+  border-radius:0;overflow:hidden;
+  padding:1px;
+}
+button.team .logo img{width:100%;height:100%;object-fit:contain;display:block}
+button.team .logo .abbr{
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:-.05em;color:var(--ink);text-shadow:none;
+}
+button.team .nm{
+  position:relative;flex:1 1 auto;min-width:0;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:16px;font-weight:700;line-height:1.1;
+  letter-spacing:.02em;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* USED / YOUR PICK — a stamped strip across the foot of the cell, out of the
+   name's way entirely */
+button.team .tag{
+  position:relative;order:2;
+  flex:0 0 100%;width:100%;
+  margin:6px -9px -11px -14px;
+  padding:3px 9px 3px 14px;
+  border:0;border-top:1.5px solid var(--rule);
+  border-radius:0;
+  background:var(--stock);
+  font-family:var(--f-mono);font-size:8px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);
+  text-align:right;
+}
+button.team:active{background:var(--stock)}
+
+/* selected — the X you just marked */
+button.team.mypick{
+  background:var(--blue-t);
+  box-shadow:inset 0 0 0 3px var(--blue);
+}
+button.team.mypick .tag{color:var(--blue);background:#fff;border-top-color:var(--blue)}
+button.team.mypick::after{
+  content:"X";background:var(--blue);color:var(--knock);border-color:var(--blue);
+}
+button.team.sel{
+  background:var(--stock);
+  box-shadow:inset 0 0 0 3px var(--ink);
+}
+button.team.sel::after{
+  content:"X";background:#fff;color:var(--ink);border-color:var(--ink);border-width:3px;line-height:20px;
+}
+button.team.sel .tag{background:var(--paper)}
+
+/* spent and locked — voided boxes */
+button.team.used,
+button.team.locked{cursor:default}
+button.team.used::after{
+  content:"\2013";background:var(--stock);color:var(--rule);border-color:var(--rule);
+}
+button.team.locked::after{
+  background:repeating-linear-gradient(45deg,var(--rule-2) 0,var(--rule-2) 3px,var(--paper) 3px,var(--paper) 6px);
+  border-color:var(--rule);
+}
+button.team.used .nm,
+button.team.locked .nm{color:var(--dim)}
+button.team.used .nm{text-decoration:line-through;text-decoration-thickness:2px}
+button.team.used .tag{color:var(--red);background:var(--red-t);border-top-color:var(--red)}
+button.team.used::before,
+button.team.locked::before{opacity:.3}
+button.team.used .logo,
+button.team.locked .logo{opacity:.4;filter:grayscale(1);border-color:var(--rule)}
+
+/* ==========================================================================
+   8 · SUBMIT — the tear-off strip at the foot of the slip
+   ========================================================================== */
+
+.submitbar{
+  position:sticky;bottom:0;z-index:20;
+  margin:16px -16px -16px;
+  padding:13px 16px calc(14px + env(safe-area-inset-bottom));
+  background:var(--paper);
+  border-top:2px dashed var(--rule);
+}
+
+button.big{
+  display:block;width:100%;
+  min-height:54px;padding:15px 14px;
+  background:var(--ink);color:var(--knock);
+  border:2px solid var(--ink);border-radius:0;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:19px;font-weight:800;line-height:1.15;
+  letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:4px 4px 0 var(--shadow);
+}
+button.big:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--shadow)}
+button.big:disabled{
+  background:var(--stock);color:var(--dim);
+  border:2px dashed var(--rule);
+  box-shadow:none;transform:none;cursor:default;
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:12px;font-weight:600;letter-spacing:.11em;
+}
+button.big.sec{
+  background:var(--paper);color:var(--ink);
+  border:2px solid var(--ink);
+  box-shadow:3px 3px 0 var(--shadow);
+}
+button.big.sec:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+button.big.mini,
+.mini{
+  width:auto;min-height:44px;
+  padding:10px 14px;
+  font-size:13px;letter-spacing:.08em;
+  box-shadow:2px 2px 0 var(--shadow);
+}
+button.big.mini:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--shadow)}
+
+/* ==========================================================================
+   9 · BUYBACK — buying another ticket
+   ========================================================================== */
+
+.card.buyback{
+  position:relative;
+  background-color:var(--stock);
+  background-image:
+    var(--perf),
+    repeating-linear-gradient(135deg,rgba(167,40,32,.05) 0,rgba(167,40,32,.05) 9px,transparent 9px,transparent 18px);
+  background-repeat:no-repeat,repeat;
+  background-size:100% 2px,auto;
+  background-position:0 7px,0 0;
+  border:2.5px solid var(--red);
+  box-shadow:5px 5px 0 var(--shadow);
+  padding-top:26px;
+}
+/* stub notches on the second-chance ticket */
+.card.buyback::before,
+.card.buyback::after{
+  content:"";position:absolute;top:96px;
+  width:22px;height:22px;
+  background:var(--desk);
+  border:2.5px solid var(--red);
+  border-radius:50%;
+}
+.card.buyback::before{left:-13px}
+.card.buyback::after{right:-13px}
+
+.buyback .bbhead{text-align:center;margin-bottom:16px}
+.buyback .bbtag{
+  display:inline-block;
+  font-family:var(--f-mono);font-size:10px;font-weight:700;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:var(--red);
+  background:var(--paper);
+  border:2px solid var(--red);
+  border-radius:0;
+  padding:5px 11px 4px;
+  margin-bottom:12px;
+  transform:rotate(-2.2deg);
+  box-shadow:2px 2px 0 rgba(167,40,32,.28);
+}
+.buyback h2{
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:33px;font-weight:800;line-height:1;
+  letter-spacing:.02em;text-transform:uppercase;
+  margin:0 0 8px;padding:0;border:0;
+  color:var(--ink);
+}
+.buyback .bbhead .muted{margin:0}
+
+/* terms, printed on the back of the ticket */
+.buyback .bbrules{
+  counter-reset:bbr;
+  list-style:none;
+  margin:16px 0 12px;padding:0;
+  border-top:2px solid var(--red);
+  border-bottom:2px solid var(--red);
+}
+.buyback .bbrules li{
+  counter-increment:bbr;
+  position:relative;
+  margin:0;padding:10px 0 10px 32px;
+  border-bottom:1px dotted var(--rule);
+  font-size:14px;line-height:1.5;
+  color:var(--ink-2);
+}
+.buyback .bbrules li:last-child{border-bottom:0}
+.buyback .bbrules li::before{
+  content:counter(bbr,decimal-leading-zero);
+  position:absolute;left:0;top:11px;
+  font-family:var(--f-mono);font-size:11px;font-weight:700;
+  letter-spacing:.04em;color:var(--red);
+}
+.buyback .bbrules b{color:var(--ink);font-weight:700}
+
+/* ==========================================================================
+   10 · PAY — the raffle-ticket action, used for entry fee and buyback
+   ========================================================================== */
+
+.venmo{
+  display:block;text-align:center;text-decoration:none;
+  background:var(--red);color:var(--knock);
+  border:2px solid var(--ink);border-radius:0;
+  padding:16px 12px;margin:12px 0;
+  min-height:54px;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:19px;font-weight:800;line-height:1.2;
+  letter-spacing:.06em;text-transform:uppercase;
+  box-shadow:inset 0 0 0 2px rgba(251,247,237,.45),4px 4px 0 var(--shadow);
+}
+.venmo:active{transform:translate(4px,4px);box-shadow:inset 0 0 0 2px rgba(251,247,237,.45),0 0 0 var(--shadow)}
+
+.paybox{
+  background:var(--paper);
+  border:2px dashed var(--red);
+  border-radius:0;
+  padding:15px;margin:18px 0;
+}
+.paybox > b{
+  display:block;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:24px;font-weight:800;letter-spacing:.03em;
+  text-transform:uppercase;line-height:1.1;margin-bottom:4px;
+}
+.paybox > b + br{display:none}   /* the markup has <b>…</b><br>; the b already blocks */
+.paybox .muted{font-size:13px}
+
+.checkrow{
+  display:flex;gap:12px;align-items:flex-start;
+  margin:14px 0 4px;padding:8px 0;
+  min-height:44px;
+  font-size:14px;line-height:1.45;
+  cursor:pointer;
+}
+.checkrow input[type=checkbox]{
+  -webkit-appearance:none;appearance:none;
+  position:relative;flex:none;
+  width:28px;height:28px;margin:0;
+  background:#fff;
+  border:2px solid var(--ink);border-radius:0;
+}
+.checkrow input[type=checkbox]:checked{background:var(--ink)}
+.checkrow input[type=checkbox]:checked::after{
+  content:"X";position:absolute;left:0;top:0;
+  width:100%;height:100%;
+  font:700 18px/24px var(--f-mono);
+  text-align:center;color:var(--knock);
+}
+.checkrow input[type=checkbox]:focus{outline:3px solid var(--blue);outline-offset:2px}
+.checkrow b{font-weight:700}
+
+/* ==========================================================================
+   11 · SEASON HISTORY — the punched card
+   ========================================================================== */
+
+.hist{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+  gap:8px;
+  padding:12px;
+  /* card stock with the corner clipped, the way a punch card is keyed */
+  background:linear-gradient(225deg,transparent 0,transparent 15px,var(--stock) 15px);
+  border-bottom:2px solid var(--ink);
+}
+.hist span{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;
+  gap:5px;
+  padding:8px 4px 7px;
+  background-color:var(--paper);
+  border:1.5px solid var(--ink);
+  border-radius:0;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:12px;font-weight:700;line-height:1.12;
+  letter-spacing:.03em;text-transform:uppercase;
+  text-align:center;word-break:break-word;
+  color:var(--ink);
+}
+/* the punch slot */
+.hist span::before{
+  content:"";order:-2;flex:none;
+  width:16px;height:8px;
+  border:1.5px solid var(--ink);
+  background:var(--stock);
+}
+/* the week number rides above the crest */
+.hist span b{
+  order:-1;
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  color:var(--dim);opacity:1;
+}
+.hist .logo{
+  width:28px;height:28px;flex:none;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;border:1.5px solid var(--ink);border-radius:0;
+  overflow:hidden;padding:1px;
+}
+.hist .logo img{width:100%;height:100%;object-fit:contain;display:block}
+.hist .logo .abbr{
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:8px;font-weight:700;letter-spacing:-.04em;
+  color:var(--ink);text-shadow:none;
+}
+/* the outcome, stamped at the foot of the column */
+.hist span::after{
+  content:"";display:block;margin-top:1px;
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:8px;font-weight:700;letter-spacing:.12em;
+}
+.hist span.W{border-color:var(--green)}
+.hist span.W::before{background:var(--ink);border-color:var(--ink)}   /* punched clean */
+.hist span.W::after{content:"WIN";color:var(--green)}
+.hist span.W b{color:var(--green)}
+
+.hist span.L,
+.hist span.T,
+.hist span.MISS{
+  border-color:var(--red);
+  /* the red strike across a voided card */
+  background-image:linear-gradient(163deg,transparent 48.2%,var(--red) 48.2%,var(--red) 51.8%,transparent 51.8%);
+}
+.hist span.L::before,
+.hist span.T::before,
+.hist span.MISS::before{background:var(--ink);border-color:var(--ink)}
+.hist span.L b,
+.hist span.T b,
+.hist span.MISS b{color:var(--red)}
+.hist span.L::after{content:"LOSS";color:var(--red)}
+.hist span.T::after{content:"TIE";color:var(--red)}
+.hist span.MISS::after{content:"NO PICK";color:var(--red)}
+
+/* ==========================================================================
+   12 · LEAGUE LEDGER — pot, recap, roster
+   ========================================================================== */
+
+.potline{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:6px 0;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+}
+.potline b{
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:27px;font-weight:700;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;
+}
+.potline.muted{
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:11px;font-weight:500;letter-spacing:.02em;
+  text-transform:uppercase;color:var(--dim);
+  padding-top:0;border-top:1px dotted var(--rule);margin-top:2px;
+}
+.count{font-variant-numeric:tabular-nums;font-family:var(--f-mono)}
+
+.standrow{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 0;
+  border-bottom:1px dotted var(--rule);
+  font-size:15px;
+}
+.standrow:last-child{border-bottom:none}
+.standrow .st{
+  flex:none;
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;
+  border:1.5px solid currentColor;border-radius:0;
+  padding:3px 6px 2px;
+}
+.standrow .st.alive{color:var(--green);background:var(--green-t)}
+.standrow .st.out{color:var(--dim);background:var(--stock);text-decoration:line-through}
+
+/* ==========================================================================
+   13 · PICK BOARD — the ruled assignment sheet
+   ========================================================================== */
+
+.boardtools{
+  display:flex;gap:10px;align-items:center;
+  margin:12px 0 10px;padding-bottom:12px;
+  border-bottom:2px solid var(--ink);
+}
+.boardtools .muted{
+  margin:0 0 0 auto;
+  font-family:var(--f-mono);font-size:10px;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;
+}
+.boardtools select{
+  min-height:44px;
+  background:#fff;color:var(--ink);
+  border:2px solid var(--ink);border-radius:0;
+  padding:8px 8px;
+  font-family:var(--f-mono);font-size:13px;
+}
+
+.boardrow{
+  display:flex;justify-content:space-between;align-items:baseline;gap:0;
+  padding:11px 6px;
+  border-bottom:1px solid var(--rule-2);
+}
+.boardrow:nth-of-type(even){background:var(--stock)}
+.boardrow:last-child{border-bottom:none}
+.boardrow .player{
+  display:flex;align-items:baseline;flex:1;min-width:0;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:17px;font-weight:700;letter-spacing:.025em;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;
+}
+/* the dotted leader that runs to the pick, like a programme */
+.boardrow .player::after{
+  content:"";flex:1;min-width:14px;
+  margin:0 8px 4px;
+  border-bottom:1.5px dotted var(--rule);
+}
+.boardrow .player .muted{
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:10px;letter-spacing:.06em;margin-left:5px;text-transform:uppercase;
+}
+.boardrow .pick{
+  flex:none;text-align:right;
+  font-family:var(--f-mono);font-size:12px;font-weight:500;
+  letter-spacing:.01em;color:var(--dim);
+}
+.boardrow .pick.live{
+  color:var(--green);font-weight:700;
+  border:1.5px solid var(--green);background:var(--green-t);
+  padding:3px 6px 2px;
+}
+
+/* ==========================================================================
+   14 · CLAIM ROSTER — numbered locker assignments
+   ========================================================================== */
+
+#nameList{counter-reset:nb;margin-top:4px}
+.namebtn{
+  counter-increment:nb;
+  display:flex;align-items:center;gap:10px;
+  width:100%;min-height:52px;
+  text-align:left;
+  background:var(--paper);
+  border:2px solid var(--ink);border-radius:0;
+  color:var(--ink);
+  padding:12px 12px;
+  margin-bottom:-2px;
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:18px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  cursor:pointer;
+}
+.namebtn::before{
+  content:counter(nb,decimal-leading-zero);
+  flex:none;
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:11px;font-weight:700;letter-spacing:.04em;
+  color:var(--dim);
+  border-right:1.5px solid var(--rule);
+  padding-right:10px;
+}
+.namebtn:active{background:var(--stock)}
+.namebtn .tag{
+  float:none;margin-left:auto;flex:none;
+  font-family:var(--f-mono);font-stretch:normal;
+  font-size:9px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);
+}
+.namebtn.taken{
+  background:var(--stock);color:var(--dim);
+  border-color:var(--rule);
+  text-decoration:line-through;text-decoration-thickness:1.5px;
+}
+.namebtn.taken .tag{
+  text-decoration:none;color:var(--red);
+  border:1.5px solid var(--red);padding:3px 5px 2px;
+}
+.namebtn.taken::before{color:var(--rule);border-right-color:var(--rule-2);text-decoration:none}
+
+/* ==========================================================================
+   15 · FORM FIELDS — a paper form
+   ========================================================================== */
+
+.fieldlabel{
+  display:block;margin:16px 0 6px;
+  font-family:var(--f-mono);font-size:10px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+input[type=text],
+input[type=email],
+input[type=tel]{
+  display:block;width:100%;
+  min-height:50px;
+  background:#fff;color:var(--ink);
+  border:2px solid var(--ink);border-radius:0;
+  padding:13px 12px;
+  margin-bottom:12px;
+  font-family:var(--f-text);font-size:16px;   /* 16px = no iOS zoom on focus */
+  box-shadow:inset 0 -3px 0 var(--stock);
+}
+input[type=text]:focus,
+input[type=email]:focus,
+input[type=tel]:focus,
+select:focus{
+  outline:3px solid var(--blue);outline-offset:0;
+  box-shadow:none;
+}
+::-webkit-input-placeholder{color:#a2977f}
+::placeholder{color:#a2977f;opacity:1}
+
+#nameFilter{margin-bottom:14px}
+#loginCode{
+  font-family:var(--f-mono);font-size:26px;font-weight:700;
+  letter-spacing:.42em;text-align:center;text-indent:.42em;
+  padding:14px 8px;
+}
+
+/* ==========================================================================
+   16 · NOTICES, PROSE, DISCLOSURES
+   ========================================================================== */
+
+.muted{
+  color:var(--ink-2);
+  font-size:14px;line-height:1.5;
+}
+.muted a,
+main a{color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+
+.err,
+.ok{
+  border-radius:0;
+  padding:13px 14px;
+  margin:0 0 14px;
+  font-size:14px;line-height:1.5;
+  color:var(--ink);
+}
+.err{
+  background:var(--red-t);
+  border:2px solid var(--red);
+  border-left-width:10px;
+}
+.ok{
+  background:var(--green-t);
+  border:2px solid var(--green);
+  border-left-width:10px;
+}
+.err b,
+.ok b{
+  font-family:var(--f-disp);font-stretch:condensed;
+  font-size:18px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+}
+.err b{color:var(--red)}
+.ok b{color:var(--green)}
+
+details{
+  margin-top:14px;
+  border-top:2px dashed var(--rule);
+  padding-top:4px;
+}
+summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;gap:9px;
+  min-height:44px;padding:6px 0;
+}
+summary::-webkit-details-marker{display:none}
+summary.muted{
+  font-family:var(--f-mono);font-size:11px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+summary::before{
+  content:"+";flex:none;
+  width:24px;height:24px;
+  border:2px solid var(--ink);
+  font:700 15px/20px var(--f-mono);
+  text-align:center;color:var(--ink);
+  background:var(--stock);
+}
+details[open] > summary::before{content:"\2013";background:var(--ink);color:var(--knock)}
+details pre{margin:0 0 6px}
+
+/* fine print / disclosure block */
+.disc{
+  margin:14px 0 0;padding:11px 12px;
+  background:var(--stock);
+  border:1.5px dotted var(--rule);
+  color:var(--dim);
+  font-family:var(--f-mono);font-size:10px;line-height:1.65;
+  letter-spacing:.04em;
+}
+.disc b{color:var(--ink-2)}
+
+/* ==========================================================================
+   17 · TOAST, SPINNER, FOOTER
+   ========================================================================== */
+
+#toast{
+  position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  max-width:92vw;
+  background:var(--ink);color:var(--knock);
+  border:2px solid var(--ink);border-radius:0;
+  padding:12px 18px;
+  display:none;z-index:60;
+  font-family:var(--f-mono);font-size:12px;line-height:1.45;
+  letter-spacing:.03em;
+  box-shadow:5px 5px 0 rgba(23,19,14,.32);
+}
+
+.spin{
+  text-align:center;padding:70px 0;
+  color:var(--ink-2);
+  font-family:var(--f-mono);font-size:11px;font-weight:700;
+  letter-spacing:.24em;text-transform:uppercase;
+}
+.spin::after{
+  content:"\2588";margin-left:4px;
+  animation:blink 1s steps(1,end) infinite;
+}
+
+footer{
+  max-width:560px;margin:0 auto;
+  padding:0 16px calc(34px + env(safe-area-inset-bottom));
+  color:var(--dim);
+  font-family:var(--f-mono);font-size:10px;line-height:1.7;
+  letter-spacing:.09em;text-transform:uppercase;
+}
+footer::before{
+  content:"";display:block;height:2px;margin-bottom:12px;
+  background-image:var(--perf);
+}
+
+/* ==========================================================================
+   18 · SMALL SCREENS / MOTION
+   ========================================================================== */
+
+@media (max-width:359px){
+  header h1{font-size:19px}
+  .statusband{padding:14px 14px}
+  .statusband > div:first-child{font-size:20px}
+  .statusband > div + div{font-size:20px}
+  .hist{grid-template-columns:repeat(3,1fr)}
+  button.team{padding-left:12px;gap:6px}
+  button.team .nm{font-size:15px}
+  .game .at{width:14px}
+  .buyback h2{font-size:28px}
+  .sectionnav button{font-size:12.5px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
+  .spin::after{content:"\2588"}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="hName">Mehrle Survivor</span></h1>
+  <div class="who" id="hWho"></div>
+</header>
+<nav class="sectionnav" id="sectionNav" aria-label="Pool sections"></nav>
+<main id="app"><div class="spin">Loading…</div></main>
+<footer id="foot"></footer>
+<div id="toast"></div>
+<script>
+"use strict";
+// ================= config =================
+const SUPABASE_URL = "https://inbgusprbxtvmdpeqksn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluYmd1c3ByYnh0dm1kcGVxa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTk2OTMsImV4cCI6MjA5OTgzNTY5M30.QUM68361lXHWqetmzA-LFOu6W33Goj-sZp5JwJUpZXs";
+const DEMO = /(\?|&)demo=(1|picked|out|used|new)\b/.test(location.search);
+const VENMO_URL = 'https://venmo.com/u/Noah-Mehrle';
+
+const TEAM_NAMES = {ARI:'Cardinals',ATL:'Falcons',BAL:'Ravens',BUF:'Bills',CAR:'Panthers',CHI:'Bears',
+CIN:'Bengals',CLE:'Browns',DAL:'Cowboys',DEN:'Broncos',DET:'Lions',GB:'Packers',HOU:'Texans',IND:'Colts',
+JAX:'Jaguars',KC:'Chiefs',LV:'Raiders',LAC:'Chargers',LAR:'Rams',MIA:'Dolphins',MIN:'Vikings',NE:'Patriots',
+NO:'Saints',NYG:'Giants',NYJ:'Jets',PHI:'Eagles',PIT:'Steelers',SF:'49ers',SEA:'Seahawks',TB:'Buccaneers',
+TEN:'Titans',WSH:'Commanders'};
+// Official club colours (ESPN team API, fetched 2026-08-07). A few clubs are
+// near-black, which vanishes on this background, so those use their alternate.
+const TEAM_COLORS = {ARI:'#a40227',ATL:'#a71930',BAL:'#29126f',BUF:'#00338d',CAR:'#0085ca',CHI:'#0b1c3a',
+CIN:'#fb4f14',CLE:'#ff3c00',DAL:'#002a5c',DEN:'#fc4c02',DET:'#0076b6',GB:'#204e32',HOU:'#eb0028',
+IND:'#003b75',JAX:'#007487',KC:'#e31837',LV:'#a5acaf',LAC:'#0080c6',LAR:'#003594',MIA:'#008e97',
+MIN:'#4f2683',NE:'#002a5c',NO:'#d3bc8d',NYG:'#003c7f',NYJ:'#115740',PHI:'#06424d',PIT:'#ffb612',
+SF:'#aa0000',SEA:'#69be28',TB:'#bd1c36',TEN:'#4495d2',WSH:'#5a1414'};
+// Logos are a progressive enhancement: the coloured badge with the abbreviation is
+// painted first and the crest sits on top only if it loads, so an offline phone or a
+// blocked CDN degrades to a readable badge instead of a broken image.
+function teamLogo(abbr){
+  return '<span class="logo" style="--tc:' + (TEAM_COLORS[abbr] || '#444') + '">'
+    + '<span class="abbr">' + esc(abbr) + '</span>'
+    + '<img alt="" loading="lazy" src="https://a.espncdn.com/i/teamlogos/nfl/500/' + encodeURIComponent(abbr.toLowerCase()) + '.png"'
+    + ' onload="this.previousElementSibling.style.display=\'none\'"'
+    + ' onerror="this.remove()"></span>';
+}
+
+// ================= state =================
+let sb = null, session = null;
+let db = { league:null, players:[], week:null, myPick:null, board:[], boardWeek:null };
+let me = { pid: localStorage.getItem('survivor_pid') || null, player:null };
+let sel = null;      // currently tapped team
+const requestedScreen = new URLSearchParams(location.search).get('screen');
+// Default to 'home'. Under legacy_claim a device with no survivor_pid is far more
+// often a ROSTERED player on a new/wiped phone than a brand-new entrant, and
+// landing them on the $10 Venmo form invites a second payment for an entry they
+// already bought. 'home' renders the claim list, which carries an explicit
+// "I'm new" route to Join for people who actually are.
+let view = ['join','home','board'].indexOf(requestedScreen) >= 0 ? requestedScreen : 'home';
+let boardSort = 'player';
+let authMode = 'legacy_claim';
+const pendingLoginEmail = sessionStorage.getItem('survivor_login_email') || '';
+let loginState = {email:pendingLoginEmail, sent:!!pendingLoginEmail, busy:false, message:''};
+let signupState = {busy:false, done:false, email:'', message:'', form:{name:'',email:'',phone:''}};
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', 3000);
+}
+function fmtKick(iso){
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', {weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short'}).replace(/,/g, '');
+}
+function money(n){ return '$' + (+n || 0).toLocaleString(); }
+function getSignupToken(){
+  const yr = (db.league && db.league.config && db.league.config.seasonYear) || 'current';
+  const key = 'survivor_signup_token_' + String(yr);
+  let token = localStorage.getItem(key) || '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)){
+    token = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+        });
+    localStorage.setItem(key, token);
+  }
+  return token;
+}
+
+// ================= data =================
+function isAnonymousSession(s){ return !!(s && s.user && (s.user.is_anonymous === true || !s.user.email)); }
+
+async function loadBootstrap(){
+  // Always bootstrap as the public anon role. A stored legacy/email session may be
+  // authenticated but unmapped, so using the session-bound client can hide authMode.
+  const r = await fetch(SUPABASE_URL + '/rest/v1/league?id=eq.1&select=config%2Cupdated_at', {
+    cache:'no-store', headers:{apikey:SUPABASE_ANON_KEY, Authorization:'Bearer ' + SUPABASE_ANON_KEY}
+  });
+  if (!r.ok) throw new Error('Could not read the pool login settings.');
+  const rows = await r.json();
+  db.league = (rows && rows[0]) || {config:{}, state:{}};
+  authMode = (db.league.config && db.league.config.authMode) || 'legacy_claim';
+}
+
+async function prepareSession(){
+  const { data, error } = await sb.auth.getSession();
+  if (error) throw error;
+  session = data.session || null;
+  if (authMode === 'email_otp'){
+    if (isAnonymousSession(session)){
+      await sb.auth.signOut();
+      session = null;
+    } else if (session){
+      const mine = await sb.rpc('get_my_player');
+      if (mine.error) throw mine.error;
+      const mapped = Array.isArray(mine.data) ? mine.data[0] : mine.data;
+      if (!mapped || !mapped.pid){
+        loginState.email = (session.user && session.user.email) || loginState.email;
+        loginState.sent = false;
+        sessionStorage.removeItem('survivor_login_email');
+        await sb.auth.signOut();
+        session = null;
+      }
+    }
+    me.pid = null; me.player = null; localStorage.removeItem('survivor_pid');
+    return;
+  }
+  if (session && !isAnonymousSession(session)){
+    await sb.auth.signOut();
+    session = null;
+  }
+  if (!session){
+    const { data: d2, error: e2 } = await sb.auth.signInAnonymously();
+    if (e2) throw e2;
+    session = d2.session;
+  }
+}
+
+async function loadPickBoard(){
+  db.board = []; db.boardWeek = null;
+  if (!session) return;
+  const { data, error } = await sb.rpc('get_pick_board', {p_week:null});
+  if (error) throw error;
+  db.board = Array.isArray(data) ? data : [];
+  db.boardWeek = db.board.length ? db.board[0].board_week : null;
+}
+
+async function submitSignupRequest(name, email, phone, venmoSent){
+  name = String(name || '').trim();
+  email = String(email || '').trim().toLowerCase();
+  phone = String(phone || '').trim();
+  if (name.length < 2) throw new Error('Enter your full name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.');
+  if (phone.replace(/\D/g, '').length < 10) throw new Error('Enter a valid mobile number.');
+  if (!venmoSent) throw new Error('Confirm that you sent the Venmo entry fee.');
+  signupState.form = {name, email, phone};
+  signupState.busy = true; signupState.message = ''; render();
+  if (DEMO){
+    signupState = {busy:false, done:true, email, message:'', form:{name:'',email:'',phone:''}}; render(); return;
+  }
+  let temporarySession = false;
+  if (!session){
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) throw error;
+    session = data.session; temporarySession = true;
+  }
+  const { error } = await sb.rpc('submit_signup_request', {
+    p_name:name, p_email:email, p_phone:phone, p_venmo_sent:true, p_client_token:getSignupToken()
+  });
+  if (error){
+    if (temporarySession){ try{ await sb.auth.signOut(); }catch(e){} session = null; }
+    throw error;
+  }
+  signupState = {busy:false, done:true, email, message:'', form:{name:'',email:'',phone:''}};
+  if (temporarySession){ try{ await sb.auth.signOut(); }catch(e){} session = null; }
+  render();
+}
+
+async function loadAll(){
+  let mapped = null;
+  if (authMode === 'email_otp'){
+    if (!session || isAnonymousSession(session)) throw new Error('Please sign in with your email code.');
+    const mine = await sb.rpc('get_my_player');
+    if (mine.error) throw mine.error;
+    mapped = Array.isArray(mine.data) ? mine.data[0] : mine.data;
+    if (!mapped || !mapped.pid) throw new Error('This signed-in email is not linked to an active pool account. Ask Noah to check the roster email.');
+    me.pid = mapped.pid;
+  }
+  const playerColumns = authMode === 'email_otp'
+    ? 'pid,name,alive,elim_week,used_teams'
+    : 'pid,name,claim_uid,alive,elim_week,used_teams';
+  const [lg, pl, wk] = await Promise.all([
+    sb.from('league').select('config,state,updated_at').eq('id', 1).maybeSingle(),
+    sb.from('players').select(playerColumns).order('name'),
+    sb.from('weeks').select('week,kicks,games,first_kickoff').order('week'),
+  ]);
+  if (lg.error || pl.error || wk.error) throw (lg.error || pl.error || wk.error);
+  db.league = lg.data || {config:{}, state:{}};
+  db.players = pl.data || [];
+  // pick week = first published week that still has a game in the future
+  const now = Date.now();
+  db.week = null;
+  for (const w of (wk.data || [])){
+    const kicks = w.kicks || {};
+    if (Object.values(kicks).some(iso => new Date(iso).getTime() > now)){ db.week = w; break; }
+  }
+  me.player = me.pid ? db.players.find(p => p.pid === me.pid) : null;
+  // device thinks it's someone, but the claim was reset or belongs to another uid -> back to claim
+  if (authMode !== 'email_otp' && me.player && me.player.claim_uid && session && me.player.claim_uid !== session.user.id){
+    me.player = null; me.pid = null; localStorage.removeItem('survivor_pid');
+  }
+  db.myPick = null;
+  if (me.player && db.week){
+    const { data, error } = await sb.from('picks').select('id,team,week,submitted_at')
+      .eq('pid', me.pid).eq('week', db.week.week).maybeSingle();
+    if (error) throw error;
+    db.myPick = data || null;
+  }
+  await loadPickBoard();
+}
+
+async function sendLoginCode(email){
+  email = String(email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.');
+  loginState.email = email;
+  loginState.busy = true; loginState.message = ''; render();
+  if (session){ await sb.auth.signOut(); session = null; }
+  const { error } = await sb.auth.signInWithOtp({email, options:{shouldCreateUser:false}});
+  loginState.busy = false;
+  if (error) throw error;
+  loginState.email = email; loginState.sent = true;
+  sessionStorage.setItem('survivor_login_email', email);
+  render();
+}
+
+async function verifyLoginCode(code){
+  code = String(code || '').replace(/\D/g, '');
+  if (!/^\d{6}$/.test(code)) throw new Error('Enter the 6-digit code from the email.');
+  loginState.busy = true; loginState.message = ''; render();
+  const { data, error } = await sb.auth.verifyOtp({email:loginState.email, token:code, type:'email'});
+  if (error){ loginState.busy = false; throw error; }
+  session = data.session;
+  loginState = {email:'',sent:false,busy:false,message:''};
+  sessionStorage.removeItem('survivor_login_email');
+  await loadAll(); render();
+}
+
+async function signOutPlayer(){
+  await sb.auth.signOut();
+  session = null; me.pid = null; me.player = null; db.players = []; db.week = null; db.myPick = null;
+  localStorage.removeItem('survivor_pid'); sessionStorage.removeItem('survivor_login_email');
+  loginState = {email:'',sent:false,busy:false,message:''};
+  await loadBootstrap();
+  if (authMode !== 'email_otp') await prepareSession();
+  render();
+}
+
+async function claim(pid){
+  const { data, error } = await sb.rpc('claim_player', { p_pid: pid });
+  if (error){ toast('Claim failed: ' + error.message); return; }
+  if (data !== true){
+    toast('That name is already claimed on another phone. If it’s really you, ask Noah to reset it.');
+    return;
+  }
+  me.pid = pid; localStorage.setItem('survivor_pid', pid);
+  view = 'home';
+  await loadAll(); render();
+  toast('Welcome, ' + (me.player ? me.player.name : pid) + '!');
+}
+
+async function submitPick(){
+  if (!sel || !me.player || !db.week) return;
+  const requested = sel;
+  const wk = db.week.week;
+  const id = me.pid + '_w' + wk;
+  const btn = document.getElementById('submitBtn');
+  if (btn) btn.disabled = true;
+  let error = null;
+  if (db.myPick){
+    ({ error } = await sb.from('picks').update({ team: sel }).eq('id', id));
+  } else {
+    ({ error } = await sb.from('picks').insert({ id, pid: me.pid, week: wk, team: sel }));
+    if (error && (error.code === '23505')){ // raced our own earlier insert
+      ({ error } = await sb.from('picks').update({ team: sel }).eq('id', id));
+    }
+  }
+  if (error){
+    const msg = /row-level security/i.test(error.message)
+      ? 'The league server refused this pick — the game may have kicked off, or you’ve already used that team.'
+      : error.message;
+    toast('❌ ' + msg);
+    await loadAll(); render();
+    return;
+  }
+  await loadAll();
+  if (!db.myPick || db.myPick.team !== requested){
+    sel = null;
+    render();
+    toast('❌ Pick was not changed — your original game may already have kicked off.');
+    return;
+  }
+  sel = null;
+  render();
+  toast('Locked in — ' + (TEAM_NAMES[db.myPick.team] || db.myPick.team) + ' — you can change it until kickoff');
+}
+
+// ================= demo mode =================
+// ?demo=1 is the default (alive, hasn't picked). The other scenarios exist because
+// those are the screens that are hard to reason about in the abstract and impossible
+// to see in the real app until they happen to a real person mid-season:
+//   ?demo=picked  already locked a pick in
+//   ?demo=out     eliminated, one buyback offered
+//   ?demo=used    eliminated, buyback already spent — final
+//   ?demo=new     this phone has never claimed a name
+function loadDemo(){
+  const t = h => new Date(Date.now() + h * 3600e3).toISOString();
+  const scenario = (new URLSearchParams(location.search).get('demo') || '1').toLowerCase();
+  const out = scenario === 'out', used = scenario === 'used';
+  const dead = out || used;
+  const me_state = {name:'Demo You', alive:!dead, picks:{1:{team:'DEN', outcome:'W'}, 2:{team:'ARI', outcome:dead ? 'L' : 'W'}}};
+  if (dead){
+    me_state.elimWeek = 2;
+    me_state.buybackUsed = used;
+    me_state.buybackEligible = out;
+    me_state.buybackPrice = out ? 30 : null;
+    me_state.buybackReentryWeek = out ? 3 : null;
+  }
+  db.league = {config:{leagueName:'Mehrle Survivor (DEMO)', seasonYear:2026, entryFee:10},
+    state:{pot:{entry:700, bb: out || used ? 30 : 0, total: out || used ? 730 : 700},
+      aliveCount: dead ? 2 : 3, lastApplied:2,
+      recap:'🏈 Demo recap — week 2 results…',
+      players:{demo_you: me_state}}};
+  db.players = [
+    {pid:'demo_you', name:'Demo You', claim_uid:'me', alive:!dead, elim_week: dead ? 2 : null, used_teams:['DEN','ARI']},
+    {pid:'demo_amy', name:'Amy (demo)', claim_uid:null, alive:true, used_teams:[]},
+    {pid:'demo_joe', name:'Joe (demo)', claim_uid:null, alive:false, elim_week:2, used_teams:[]},
+  ];
+  db.week = {week:3, first_kickoff:t(2),
+    games:[['CIN','CLE',t(2)],['DEN','KC',t(5)],['DAL','PHI',t(-1)],['BUF','MIA',t(26)]],
+    kicks:{CIN:t(2), CLE:t(2), DEN:t(5), KC:t(5), DAL:t(-1), PHI:t(-1), BUF:t(26), MIA:t(26)}};
+  if (scenario === 'new'){
+    // never-claimed phone: this is the very first thing a real player sees
+    me.pid = null; me.player = null;
+    db.players[0].claim_uid = null;
+  } else {
+    me.pid = 'demo_you'; me.player = db.players[0];
+  }
+  db.myPick = scenario === 'picked' ? {team:'CIN', week:3} : null;
+  db.boardWeek = 3;
+  db.board = [
+    {board_week:3,pid:'demo_you',player_name:'Demo You',alive:!dead,elim_week: dead ? 2 : null,
+     team: scenario === 'picked' ? 'CIN' : null, pick_status: dead ? 'out' : 'hidden', is_self:true},
+    {board_week:3,pid:'demo_amy',player_name:'Amy (demo)',alive:true,team:'DAL',pick_status:'revealed',is_self:false},
+    {board_week:3,pid:'demo_joe',player_name:'Joe (demo)',alive:false,elim_week:2,team:null,pick_status:'out',is_self:false},
+  ];
+  session = {user:{id:'me'}};
+  if (!requestedScreen) view = 'home';
+}
+
+// ================= render =================
+function render(){
+  const app = document.getElementById('app');
+  const cfg = (db.league && db.league.config) || {};
+  document.getElementById('hName').textContent = cfg.leagueName || 'Mehrle Survivor';
+  document.title = cfg.leagueName || 'Mehrle Survivor';
+  const who = document.getElementById('hWho');
+  who.innerHTML = me.player ? esc(me.player.name) + ' · <a href="#" id="' + (authMode === 'email_otp' ? 'signOutLink' : 'switchLink') + '">'
+    + (authMode === 'email_otp' ? 'sign out' : 'switch') + '</a>' : '';
+  document.getElementById('foot').textContent = DEMO ? 'DEMO MODE — nothing is saved' :
+    'Picks lock at each game’s kickoff. Problems? Text Noah.';
+
+  renderSectionNav();
+  if (view === 'join'){ app.innerHTML = renderSignup(); wire(); return; }
+  if (view === 'board'){ app.innerHTML = renderPickBoard(); wire(); return; }
+
+  if (!me.player){ app.innerHTML = authMode === 'email_otp' ? renderLogin() : renderClaim(); wire(); return; }
+
+  let h = '';
+  const st = (db.league && db.league.state) || {};
+  const meState = (st.players || {})[me.pid] || {};
+  const alive = me.player.alive;
+  let outSub = 'Your entry is eliminated.';
+  if (!alive && meState.buybackEligible){
+    outSub = 'But you get one buyback \u2014 see below.';
+  } else if (!alive && meState.buybackUsed){
+    outSub = 'Your one buyback was already used, so this loss is final.';
+  } else if (!alive && me.player.elim_week > 5){
+    outSub = 'Buybacks are only available after losses in Weeks 1–5.';
+  }
+  h += '<div class="statusband ' + (alive ? 'alive' : 'out') + '"><div>' +
+    (alive ? 'Still alive' : 'Eliminated' + (me.player.elim_week ? ' · WK ' + me.player.elim_week : '')) +
+    '<div class="sub">' + (alive
+      ? esc((st.aliveCount != null ? st.aliveCount + ' of ' + db.players.length + ' still standing' : ''))
+      : esc(outSub)) + '</div></div>' +
+    (st.pot ? '<div style="text-align:right">' + money(st.pot.total) + '<div class="sub">pot</div></div>' : '') + '</div>';
+
+  if (alive) h += renderPickCard();
+  else if (meState.buybackEligible) h += renderBuyback(meState);
+  h += renderHistory(meState);
+  h += renderLeague(st);
+  app.innerHTML = h;
+  wire();
+}
+
+function renderSectionNav(){
+  const items = [['join','Join'],['home','My Pick'],['board','League Picks']];
+  document.getElementById('sectionNav').innerHTML = items.map(x =>
+    '<button type="button" class="navbtn' + (view === x[0] ? ' on' : '') + '" data-view="' + x[0] + '">' + x[1] + '</button>'
+  ).join('');
+}
+
+function renderSignup(){
+  const cfg = (db.league && db.league.config) || {};
+  const fee = cfg.entryFee != null ? +cfg.entryFee : 10;
+  if (signupState.done){
+    return '<div class="card"><div class="ok"><b>Entry received.</b><br>Noah will review your information and verify the Venmo payment.</div>'
+      + '<h2>What happens next</h2><p class="muted">Your payment checkbox is a confirmation from you—not an automatic payment check. '
+      + 'Once Noah adds and approves you, use <b>My Pick</b> to claim or sign in to your account.</p>'
+      + '<button type="button" class="big sec" id="afterSignupMyPick">Go to My Pick</button></div>';
+  }
+  const f = signupState.form || {};
+  let h = '<div class="card"><h2>Join ' + esc(cfg.leagueName || 'Mehrle Survivor') + '</h2>'
+    + '<p class="muted">Enter your own contact information so Noah can add you to the pool and reach you about picks.</p>';
+  if (signupState.message) h += '<div class="err">' + esc(signupState.message) + '</div>';
+  h += '<form id="signupForm">'
+    + '<label class="fieldlabel" for="signupName">Full name</label>'
+    + '<input type="text" id="signupName" value="' + esc(f.name || '') + '" autocomplete="name" maxlength="80" placeholder="First and last name" required>'
+    + '<label class="fieldlabel" for="signupEmail">Email</label>'
+    + '<input type="email" id="signupEmail" value="' + esc(f.email || '') + '" autocomplete="email" maxlength="254" placeholder="you@example.com" required>'
+    + '<label class="fieldlabel" for="signupPhone">Mobile phone</label>'
+    + '<input type="tel" id="signupPhone" value="' + esc(f.phone || '') + '" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="(513) 555-0123" required>'
+    + '<p class="muted">Your email and phone stay private and are only shown to Noah.</p>'
+    + '<div class="paybox"><b>Entry fee: ' + money(fee) + '</b><br><span class="muted">Send it to <b>@Noah-Mehrle</b> and put your full name in the Venmo note.</span>'
+    + '<a class="venmo" href="' + esc(VENMO_URL) + '" target="_blank" rel="noopener">Open Venmo @Noah-Mehrle</a>'
+    + '<label class="checkrow"><input type="checkbox" id="venmoSent" required><span><b>I confirm I sent the ' + money(fee) + ' entry fee to @Noah-Mehrle.</b><br>'
+    + '<span class="muted">Noah will still verify the payment before marking you paid.</span></span></label></div>'
+    + '<button type="submit" class="big"' + (signupState.busy ? ' disabled' : '') + '>' + (signupState.busy ? 'Sending…' : 'Send my entry') + '</button></form></div>';
+  return h;
+}
+
+function renderPickBoard(){
+  if (!me.player){
+    return '<div class="card"><h2>League picks</h2><p class="muted">The pick board is private to pool members. Open <b>My Pick</b> and claim your name or sign in first.</p>'
+      + '<button type="button" class="big sec" id="goMyPick">Go to My Pick</button></div>';
+  }
+  if (!db.board.length){
+    return '<div class="card"><h2>League picks</h2><p class="muted">There isn’t a published pick week yet. Check back after Noah publishes the schedule.</p>'
+      + '<button type="button" class="big sec mini" id="boardRefresh">Refresh</button></div>';
+  }
+  const rows = db.board.slice().sort((a,b) => {
+    if (boardSort === 'team'){
+      const at = a.team ? (TEAM_NAMES[a.team] || a.team) : 'zzzz';
+      const bt = b.team ? (TEAM_NAMES[b.team] || b.team) : 'zzzz';
+      const byTeam = at.localeCompare(bt);
+      if (byTeam) return byTeam;
+    }
+    return String(a.player_name || '').localeCompare(String(b.player_name || ''));
+  });
+  let h = '<div class="card"><h2>Week ' + esc(db.boardWeek) + ' league picks</h2>'
+    + '<p class="muted">Other people’s picks unlock only when <b>that team’s game starts</b>. Before kickoff, a saved pick and no pick look exactly the same.</p>'
+    + '<div class="boardtools"><button type="button" class="big sec mini" id="boardRefresh">Refresh</button>'
+    + '<label class="muted" for="boardSort">Sort</label><select id="boardSort"><option value="player"' + (boardSort === 'player' ? ' selected' : '') + '>Player</option>'
+    + '<option value="team"' + (boardSort === 'team' ? ' selected' : '') + '>Revealed team</option></select></div>';
+  for (const r of rows){
+    let pick = 'Hidden until kickoff', cls = '';
+    const ownCurrentPick = r.is_self && db.week && db.week.week === r.board_week && db.myPick;
+    if (r.pick_status === 'revealed' && r.team){ pick = (TEAM_NAMES[r.team] || r.team) + ' (' + r.team + ')'; cls = ' live'; }
+    else if (ownCurrentPick){ pick = 'Your pick: ' + (TEAM_NAMES[db.myPick.team] || db.myPick.team); cls = ' live'; }
+    else if (r.pick_status === 'missing') pick = 'No pick';
+    else if (r.pick_status === 'out') pick = 'Out' + (r.elim_week ? ' — week ' + r.elim_week : '');
+    h += '<div class="boardrow"><span class="player">' + esc(r.player_name) + (r.is_self ? ' <span class="muted">(you)</span>' : '') + '</span>'
+      + '<span class="pick' + cls + '">' + esc(pick) + '</span></div>';
+  }
+  return h + '</div>';
+}
+
+function renderLogin(){
+  const email = esc(loginState.email || '');
+  let h = '<div class="card"><h2>Sign in to your pool account</h2>';
+  if (loginState.message) h += '<div class="' + (loginState.message.indexOf('sent') >= 0 ? 'ok' : 'err') + '">' + esc(loginState.message) + '</div>';
+  if (!loginState.sent){
+    h += '<p class="muted">Use the email Noah has for you. We’ll send a private 6-digit sign-in code—no password to remember.</p>'
+      + '<form id="emailLoginForm"><input type="email" id="loginEmail" value="' + email + '" placeholder="you@example.com" autocomplete="email" required>'
+      + '<button type="submit" class="big"' + (loginState.busy ? ' disabled' : '') + '>' + (loginState.busy ? 'Sending…' : 'Send my code') + '</button></form>';
+  } else {
+    h += '<div class="ok">Code sent. Check your inbox and spam folder.</div>'
+      + '<p class="muted">Enter the 6-digit code sent to <b>' + email + '</b>.</p>'
+      + '<form id="codeLoginForm"><input type="tel" id="loginCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>'
+      + '<button type="submit" class="big"' + (loginState.busy ? ' disabled' : '') + '>' + (loginState.busy ? 'Checking…' : 'Sign in') + '</button></form>'
+      + '<button type="button" class="big sec" id="changeEmailBtn" style="margin-top:10px">Use a different email</button>';
+  }
+  return h + '<p class="muted" style="margin-top:12px">Not receiving a code? Confirm the roster email with Noah.</p></div>';
+}
+
+function renderClaim(){
+  let h = '<div class="card"><h2>Who are you?</h2>';
+  if (!db.players.length){
+    h += '<p class="muted">The roster hasn’t been published yet — check back soon, or text Noah.</p></div>';
+    return h;
+  }
+  h += '<p class="muted">Tap your name to claim it on this phone. One phone per person — if you switch phones, Noah can reset you.</p>' +
+    '<input type="text" id="nameFilter" placeholder="Search your name…" autocomplete="off">' +
+    '<div id="nameList">';
+  for (const p of db.players){
+    const takenByOther = p.claim_uid && (!session || p.claim_uid !== session.user.id);
+    h += '<button type="button" class="namebtn' + (takenByOther ? ' taken' : '') + '" data-pid="' + esc(p.pid) + '"' +
+      (takenByOther ? ' data-taken="1"' : '') + '>' + esc(p.name) +
+      '<span class="tag">' + (takenByOther ? 'claimed' : (p.alive ? '' : 'out wk' + (p.elim_week || '?'))) + '</span></button>';
+  }
+  h += '</div>';
+  // The two ways this list fails a real person, answered in place: their name is
+  // missing (they never joined) or it says "claimed" (old phone still holds it).
+  h += '<p class="muted" style="margin-top:14px">Don’t see your name? You haven’t joined yet — ' +
+    '<a href="#" id="claimGoJoin">enter the pool here</a>.<br>' +
+    'Name there but marked <b>claimed</b>? That’s your old phone. Text Noah and he’ll reset it — ' +
+    'don’t pay again.</p></div>';
+  return h;
+}
+
+// The buyback is the one screen that asks a person for money, and it used to be a
+// grey subtitle inside the red band. It gets the same treatment as the entry fee.
+function renderBuyback(meState){
+  const price = money(meState.buybackPrice);
+  const wk = meState.buybackReentryWeek;
+  const used = (me.player.used_teams || []).map(t => TEAM_NAMES[t] || t);
+  return '<div class="card buyback">'
+    + '<div class="bbhead"><span class="bbtag">Second chance</span>'
+      + '<h2>Buy back in for ' + esc(price) + '</h2>'
+      + '<p class="muted">You’re back in for <b>Week ' + wk + '</b> — everyone else keeps playing without you until then.</p></div>'
+    + '<a class="venmo" href="' + esc(VENMO_URL) + '" target="_blank" rel="noopener">Send ' + esc(price) + ' on Venmo</a>'
+    + '<p class="muted" style="text-align:center;margin:-2px 0 14px">Put your name in the note, then text Noah. He marks you back in by hand.</p>'
+    + '<ul class="bbrules">'
+      + '<li><b>One buyback per season.</b> If you go out again, that’s it.</li>'
+      + '<li>The price is $10 × the week you come back in — it goes up every week you wait.</li>'
+      + '<li>' + (used.length
+          ? 'Teams you already used stay used: <b>' + esc(used.join(', ')) + '</b> — including the one you lost with.'
+          : 'Every team you already used stays used, including the one you lost with.') + '</li>'
+      + '<li>Your money goes straight into the pot.</li>'
+    + '</ul>'
+    + '<p class="muted">Not worth it? Do nothing — you’ll still see everyone else’s picks and the recap each week.</p>'
+    + '</div>';
+}
+
+function renderPickCard(){
+  if (!db.week){
+    return '<div class="card"><h2>This week</h2><p class="muted">No week is open for picks yet — Noah publishes the schedule after grading. Check back soon.</p></div>';
+  }
+  const wk = db.week, now = Date.now();
+  const used = new Set(me.player.used_teams || []);
+  const pickKicked = !!(db.myPick && wk.kicks[db.myPick.team] && new Date(wk.kicks[db.myPick.team]).getTime() <= now);
+  let h = '<div class="card"><h2>Week ' + wk.week + ' — pick your winner</h2>';
+  if (db.myPick){
+    h += '<div class="pickedbanner">Your pick: <b>' + esc(TEAM_NAMES[db.myPick.team] || db.myPick.team) + '</b>' +
+      (pickKicked ? ' — locked, your game started' : ' — tap another team to change it before kickoff') + '</div>';
+  } else {
+    h += '<div class="err"><b>No pick yet</b><br>If you don’t pick before the games start, you’re out.</div>';
+  }
+  const games = (wk.games && wk.games.length) ? wk.games : Object.keys(wk.kicks || {}).sort().map(t => [t, null, wk.kicks[t]]);
+  for (const g of games){
+    const [away, home, iso] = g;
+    const kicked = new Date(iso).getTime() <= now;
+    h += '<div class="game' + (kicked ? ' islive' : '') + '">';
+    h += '<div class="gwhen"><span class="dot"></span>'
+       + (kicked ? 'Started — locked' : esc(fmtKick(iso))) + '</div>';
+    h += '<div class="grow">';
+    h += teamBtn(away, used, kicked, pickKicked);
+    h += '<span class="at">@</span>';
+    h += home ? teamBtn(home, used, kicked, pickKicked) : '';
+    h += '</div></div>';
+  }
+  h += '<div class="submitbar"><button type="button" class="big" id="submitBtn"' + (sel ? '' : ' disabled') + '>' +
+    (sel ? (db.myPick ? 'Change pick to ' : 'Lock in ') + (TEAM_NAMES[sel] || sel) : (db.myPick ? 'Tap a team to change your pick' : 'Tap a team above')) +
+    '</button></div>';
+  h += '<p class="muted">Teams you’ve already used are crossed out. Games that started are locked. The server enforces all of this — no take-backs after kickoff.</p></div>';
+  return h;
+}
+
+function teamBtn(abbr, used, kicked, pickKicked){
+  if (!abbr) return '';
+  const isSel = sel === abbr;
+  const isMine = db.myPick && db.myPick.team === abbr;
+  let cls = 'team';
+  if (isSel) cls += ' sel';
+  if (used.has(abbr)) cls += ' used';
+  else if (kicked || pickKicked) cls += ' locked';
+  if (isMine) cls += ' mypick';
+  const dis = used.has(abbr) || kicked || pickKicked;
+  const tag = used.has(abbr) ? 'USED' : (isMine ? 'YOUR PICK' : '');
+  return '<button type="button" class="' + cls + '" style="--tc:' + (TEAM_COLORS[abbr] || '#444') + '"'
+    + ' data-team="' + esc(abbr) + '"'
+    + (dis ? ' data-dis="1" aria-disabled="true"' : '') + (pickKicked ? ' data-pick-locked="1"' : '') + '>'
+    + teamLogo(abbr)
+    + '<span class="nm">' + esc(TEAM_NAMES[abbr] || abbr) + '</span>'
+    + (tag ? '<span class="tag">' + tag + '</span>' : '')
+    + '</button>';
+}
+
+function renderHistory(meState){
+  const picks = meState.picks || {};
+  const weeks = Object.keys(picks).map(Number).sort((a,b) => a - b);
+  if (!weeks.length) return '';
+  let h = '<div class="card"><h2>Your season</h2><div class="hist">';
+  for (const w of weeks){
+    const p = picks[w];
+    h += '<span class="' + esc(p.outcome || '') + '">' + (p.team ? teamLogo(p.team) : '')
+       + '<b>W' + w + '</b> ' + esc(TEAM_NAMES[p.team] || p.team || '—') + '</span>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderLeague(st){
+  let h = '<div class="card"><h2>The league</h2>';
+  if (st.pot){
+    h += '<div class="potline"><span>Pot</span><b>' + money(st.pot.total) + '</b></div>' +
+      '<div class="potline muted"><span>' + money(st.pot.entry) + ' entries + ' + money(st.pot.bb) + ' buybacks</span>' +
+      '<span class="count">' + (st.aliveCount != null ? st.aliveCount + ' alive' : '') + '</span></div>';
+  }
+  if (st.recap) h += '<details style="margin:8px 0"><summary class="muted" style="cursor:pointer">Last week’s recap</summary><pre style="white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--dim)">' + esc(st.recap) + '</pre></details>';
+  const rows = db.players.map(p => '<div class="standrow"><span>' + esc(p.name) + '</span><span class="st ' +
+    (p.alive ? 'alive">ALIVE' : 'out">OUT' + (p.elim_week ? ' wk' + p.elim_week : '')) + '</span></div>').join('');
+  h += '<details><summary class="muted" style="cursor:pointer">Everyone (' + db.players.length + ')</summary>' + rows + '</details>';
+  h += '</div>';
+  return h;
+}
+
+// ================= events =================
+function wire(){
+  document.querySelectorAll('.navbtn').forEach(b => b.onclick = async () => {
+    view = b.dataset.view;
+    if (view === 'board' && me.player && !DEMO){
+      try{ await loadPickBoard(); }catch(err){ toast('Couldn’t refresh league picks: ' + (err.message || err)); }
+    }
+    render();
+  });
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm) signupForm.onsubmit = e => {
+    e.preventDefault();
+    submitSignupRequest(
+      document.getElementById('signupName').value,
+      document.getElementById('signupEmail').value,
+      document.getElementById('signupPhone').value,
+      document.getElementById('venmoSent').checked
+    ).catch(err => {
+      signupState.busy = false;
+      const msg = String(err && err.message || '');
+      signupState.message = /^(Enter|Confirm)/.test(msg)
+        ? msg : 'Your entry could not be sent. Check your connection and try again, or text Noah.';
+      render();
+    });
+  };
+  const afterSignupMyPick = document.getElementById('afterSignupMyPick');
+  if (afterSignupMyPick) afterSignupMyPick.onclick = () => { view = 'home'; render(); };
+  const goMyPick = document.getElementById('goMyPick');
+  if (goMyPick) goMyPick.onclick = () => { view = 'home'; render(); };
+  const claimGoJoin = document.getElementById('claimGoJoin');
+  if (claimGoJoin) claimGoJoin.onclick = (e) => { e.preventDefault(); view = 'join'; render(); };
+  const boardRefresh = document.getElementById('boardRefresh');
+  if (boardRefresh) boardRefresh.onclick = async () => {
+    boardRefresh.disabled = true;
+    try{ if (!DEMO) await loadPickBoard(); toast('League picks refreshed'); }
+    catch(err){ toast('Couldn’t refresh league picks: ' + (err.message || err)); }
+    render();
+  };
+  const boardSortEl = document.getElementById('boardSort');
+  if (boardSortEl) boardSortEl.onchange = () => { boardSort = boardSortEl.value; render(); };
+  const so = document.getElementById('signOutLink');
+  if (so) so.onclick = e => {
+    e.preventDefault();
+    signOutPlayer().catch(err => toast('Couldn’t sign out: ' + (err.message || err)));
+  };
+  const emailForm = document.getElementById('emailLoginForm');
+  if (emailForm) emailForm.onsubmit = e => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    sendLoginCode(email).catch(err => {
+      loginState.busy = false;
+      loginState.message = /valid email/i.test(err.message || '') ? err.message
+        : (/429|rate limit/i.test(err.message || '') ? 'Too many codes were requested. Wait a few minutes and try again.'
+          : 'A code could not be sent. Confirm this is the roster email or ask Noah for help.');
+      render();
+    });
+  };
+  const codeForm = document.getElementById('codeLoginForm');
+  if (codeForm) codeForm.onsubmit = e => {
+    e.preventDefault();
+    verifyLoginCode(document.getElementById('loginCode').value).catch(async err => {
+      loginState.busy = false;
+      loginState.message = /linked to an active pool account/i.test(err.message || '')
+        ? err.message : 'That code is invalid or expired. Request a new one and try again.';
+      if (/linked to an active pool account/i.test(err.message || '')){ try{ await sb.auth.signOut(); session = null; }catch(e2){} }
+      render();
+    });
+  };
+  const changeEmail = document.getElementById('changeEmailBtn');
+  if (changeEmail) changeEmail.onclick = () => {
+    loginState.sent = false; loginState.busy = false; loginState.message = '';
+    sessionStorage.removeItem('survivor_login_email'); render();
+  };
+  const sw = document.getElementById('switchLink');
+  if (sw) sw.onclick = e => {
+    e.preventDefault();
+    if (!confirm('Switch player? (Your claim stays yours — this just lets you look at the claim screen.)')) return;
+    me.pid = null; me.player = null; localStorage.removeItem('survivor_pid');
+    render();
+  };
+  const filter = document.getElementById('nameFilter');
+  if (filter) filter.oninput = () => {
+    const q = filter.value.toLowerCase();
+    document.querySelectorAll('#nameList .namebtn').forEach(b => {
+      b.style.display = b.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+  };
+  document.querySelectorAll('.namebtn').forEach(b => b.onclick = () => {
+    if (b.dataset.taken){ toast('Already claimed on another phone — ask Noah to reset it if that’s you.'); return; }
+    if (!confirm('Claim "' + b.textContent.replace(/claimed|out wk\d*/,'').trim() + '" as YOU on this phone?')) return;
+    if (DEMO){ toast('Demo mode — claiming disabled'); return; }
+    claim(b.dataset.pid).catch(err => toast('Claim failed: ' + (err.message || err)));
+  });
+  document.querySelectorAll('button.team').forEach(b => b.onclick = () => {
+    if (b.dataset.dis){
+      toast(b.classList.contains('used') ? 'You already used that team this season' :
+        (b.dataset.pickLocked ? 'Your pick is locked because its game already started' : 'That game already kicked off'));
+      return;
+    }
+    sel = (sel === b.dataset.team) ? null : b.dataset.team;
+    render();
+  });
+  const sub = document.getElementById('submitBtn');
+  if (sub) sub.onclick = () => {
+    if (DEMO){ db.myPick = {team: sel}; me.player.used_teams; sel = null; render(); toast('✅ (demo) pick saved'); return; }
+    submitPick().catch(async err => {
+      try{ await loadAll(); }catch(e){}
+      sel = null; render();
+      toast('❌ Couldn’t save the pick: ' + (err.message || err));
+    });
+  };
+}
+
+// ================= boot =================
+(async function(){
+  try{
+    if (DEMO){ loadDemo(); render(); return; }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    await loadBootstrap();
+    await prepareSession();
+    if (authMode === 'email_otp' && !session){ render(); }
+    else await loadAll();
+    render();
+    sb.auth.onAuthStateChange((event, newSession) => {
+      session = newSession;
+      if (authMode === 'email_otp' && event === 'SIGNED_OUT'){
+        me.pid = null; me.player = null; db.players = []; db.week = null; db.myPick = null;
+        setTimeout(render, 0);
+      }
+    });
+    // refresh data when the app comes back to foreground (phones)
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && (authMode !== 'email_otp' || session)){ try{ await loadAll(); render(); }catch(e){} }
+    });
+    // Time passing does not emit a database event, so refresh the open board once
+    // a minute to reveal games that have just kicked off.
+    setInterval(async () => {
+      if (view === 'board' && me.player && !document.hidden){
+        try{ await loadPickBoard(); render(); }catch(e){}
+      }
+    }, 60000);
+  }catch(err){
+    // Don't blame the player's phone. "Failed to fetch" here almost always means
+    // the backend is down (a paused free-tier project looks exactly like this),
+    // and telling 70 people to check their connection routes 70 texts to Noah.
+    const raw = String((err && err.message) || err || '');
+    const backendDown = /failed to fetch|networkerror|load failed|err_name_not_resolved/i.test(raw);
+    document.getElementById('app').innerHTML =
+      '<div class="err"><b>' + (backendDown ? 'The league server isn’t responding.' : 'Couldn’t load the league.') + '</b><br>'
+      + (backendDown
+          ? 'This is on our end, not your phone — Noah has been having a look. Your pick and your entry are safe. Try again in a few minutes.'
+          : esc(raw))
+      + '</div>'
+      + '<button type="button" class="big sec" id="bootRetry">Try again</button>'
+      + '<p class="muted" style="margin-top:12px">Still stuck close to kickoff? Text Noah your pick — he can enter it by hand.</p>';
+    const retry = document.getElementById('bootRetry');
+    if (retry) retry.onclick = () => location.reload();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f2ece0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Mehrle Survivor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.js"
+        integrity="sha384-hazsLVND17GNLVdtV19te6qbFT2YuLgl8SamcF+QR5eIOC+W4dGKrUNMxU1jH1zD" crossorigin="anonymous"></script>
+<style>
+/* ==========================================================================
+   MEHRLE SURVIVOR — "THE CARD"
+   Art direction: printed matter. A sports-section agate page crossed with a
+   paper parlay card. Warm newsprint ground, one black ink, ONE spot red run
+   second — spent only on: the masthead rule, a live game, an elimination, an
+   error, money, and the pick you already locked. Everything else is black,
+   whitespace, and rules. No cards, no radii, no drop shadows (except the one
+   hard offset on the toast, which is a rubber stamp, not a shadow).
+   Two voices: a newspaper serif for heads/teams/running text, a monospace
+   agate for labels, times, figures and tags.
+   ========================================================================== */
+
+:root{
+  color-scheme:light;
+
+  --paper:#f2ece0;
+  --paper-lift:#fbf8f0;
+  --ink:#14120f;
+  --dim:#6b6254;
+  --rule:#cdc3ae;
+  --rule-mid:#a2967e;
+  --spot:#b3261e;
+  --tint-ink:rgba(20,18,15,.055);
+  --tint-spot:rgba(179,38,30,.075);
+
+  /* Newspaper serif. Times is the sports-page voice and ships on every target;
+     Georgia carries the running text. Android falls back to its own serif,
+     which is still a serif — the direction survives. */
+  --head:"Times New Roman",Times,Georgia,"Liberation Serif","Noto Serif",serif;
+  --serif:Georgia,"Times New Roman",Times,"Liberation Serif","Noto Serif",serif;
+  /* Agate: box-score numerals, datelines, tags. */
+  --agate:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Roboto Mono","DejaVu Sans Mono",monospace;
+
+  /* legacy aliases — the recap <pre> still reads var(--dim) from an inline style,
+     and these keep any other stray reference from computing to nothing. */
+  --bg:#f2ece0; --card:#f2ece0; --card2:#fbf8f0; --line:#cdc3ae; --tx:#14120f;
+  --green:#14120f; --red:#b3261e; --amber:#b3261e; --blue:#14120f;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:400 17px/1.5 var(--serif);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+::selection{background:var(--spot);color:#fff}
+a{color:var(--spot);text-decoration:underline;text-underline-offset:2px}
+b,strong{font-weight:700}
+img{max-width:100%}
+
+/* ---------- masthead ---------------------------------------------------- */
+header{
+  max-width:560px;
+  margin:0 auto;
+  padding:18px 18px 0;
+  padding-top:calc(18px + env(safe-area-inset-top));
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+}
+header h1{
+  margin:0;
+  font:700 30px/.96 var(--head);
+  letter-spacing:-.012em;
+  text-transform:uppercase;
+  color:var(--ink);
+  overflow-wrap:break-word;
+}
+header .who{
+  margin:9px 0 0;
+  font:400 10px/1.4 var(--agate);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--dim);
+  text-align:left;
+  white-space:normal;
+}
+header .who:empty{display:none}
+header .who a{
+  color:var(--spot);
+  text-decoration:none;
+  border-bottom:1px solid var(--spot);
+  padding-bottom:1px;
+}
+/* the flag rule: heavy black over the second press run */
+header::after{
+  content:"";
+  display:block;
+  box-sizing:content-box;
+  height:3px;
+  margin-top:11px;
+  border-top:5px solid var(--ink);
+  border-bottom:2px solid var(--spot);
+}
+
+/* ---------- section index (the paper's tabs) ---------------------------- */
+.sectionnav{
+  max-width:560px;
+  margin:0 auto 22px;
+  padding:0 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+}
+.sectionnav::after{
+  content:"";
+  flex:0 0 100%;
+  height:0;
+  border-top:2px solid var(--ink);
+}
+.sectionnav button,
+.sectionnav .navbtn{
+  flex:1 1 0;
+  min-width:0;
+  min-height:46px;
+  margin:0;
+  padding:0 3px;
+  -webkit-appearance:none;
+  appearance:none;
+  background:transparent;
+  border:0;
+  border-right:1px solid var(--rule);
+  border-radius:0;
+  color:var(--dim);
+  font:700 11px/1.15 var(--agate);
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.sectionnav button:last-of-type{border-right:0}
+.sectionnav button.on{background:var(--ink);color:var(--paper)}
+.sectionnav button:active{background:var(--tint-ink)}
+.sectionnav button.on:active{background:var(--ink)}
+
+main{max-width:560px;margin:0 auto;padding:0 18px 34px}
+
+/* ---------- sections: rules and air, not boxes -------------------------- */
+.card{
+  background:none;
+  border:0;
+  border-radius:0;
+  border-bottom:1px solid var(--rule);
+  padding:0 0 24px;
+  margin:0 0 24px;
+}
+.card:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0}
+.card h2{
+  margin:0 0 15px;
+  padding:0 0 6px;
+  font:700 12px/1.25 var(--agate);
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink);
+  border-bottom:4px double var(--ink);
+}
+.card p{margin:0 0 12px}
+.card p:last-child{margin-bottom:0}
+
+/* ---------- the banner strip: alive / eliminated ------------------------ */
+.statusband{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  border:0;
+  border-radius:0;
+  padding:14px 15px 15px;
+  margin:0 0 24px;
+  font:700 20px/1.06 var(--head);
+  letter-spacing:.005em;
+  text-transform:uppercase;
+}
+.statusband.alive{background:var(--ink);color:var(--paper)}
+.statusband.out{background:var(--spot);color:#fff}
+.statusband > div:first-child{flex:1 1 auto;min-width:0}
+.statusband > div + div{
+  flex:0 0 auto;
+  font:700 25px/1 var(--agate);
+  letter-spacing:-.02em;
+  white-space:nowrap;
+}
+.statusband .sub{
+  display:block;
+  margin-top:7px;
+  font:400 10px/1.5 var(--agate);
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.74);
+}
+.statusband.alive .sub{color:rgba(242,236,224,.72)}
+
+/* ---------- confirmation stamp on the pick card ------------------------- */
+.pickedbanner{
+  background:var(--tint-ink);
+  border:2px solid var(--ink);
+  border-radius:0;
+  padding:11px 13px;
+  margin:0 0 16px;
+  font:400 15px/1.45 var(--serif);
+  color:var(--ink);
+}
+.pickedbanner b{font-weight:700}
+
+/* ---------- the matchup table (agate) ----------------------------------- */
+.game{
+  margin:0 -6px;
+  padding:0 6px;
+  border:0;
+  border-top:2px solid var(--ink);
+  border-radius:0;
+  background:none;
+  overflow:visible;
+}
+.game + .game{border-top:1px solid var(--rule)}
+.game.islive{background:var(--tint-ink)}
+
+.game .gwhen{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:10px 2px 5px;
+  background:none;
+  font:700 10px/1 var(--agate);
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.game .gwhen .dot{
+  width:6px;height:6px;
+  border-radius:0;
+  background:var(--rule-mid);
+  flex:none;
+}
+.game.islive .gwhen{color:var(--spot)}
+.game.islive .gwhen .dot{background:var(--spot)}
+
+.game .grow{display:flex;align-items:stretch;padding:0 0 9px}
+.game .at{
+  align-self:stretch;
+  flex:none;
+  width:30px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-left:1px solid var(--rule);
+  border-right:1px solid var(--rule);
+  font:700 10px/1 var(--agate);
+  letter-spacing:.04em;
+  color:var(--dim);
+}
+
+/* ---------- team buttons: mark one, like a parlay card ------------------ */
+button.team{
+  flex:1 1 0;
+  min-width:0;
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  -webkit-appearance:none;
+  appearance:none;
+  background:transparent;
+  border:0;
+  border-radius:0;
+  color:var(--ink);
+  padding:11px 8px;
+  min-height:56px;
+  text-align:left;
+  font:700 16px/1.15 var(--head);
+  letter-spacing:-.005em;
+  cursor:pointer;
+  overflow:hidden;
+}
+/* team colour stays off the page until you touch it — the sheet is one ink */
+button.team::before{
+  content:"";
+  position:absolute;
+  top:0;right:0;bottom:0;left:0;
+  background:var(--tc,#444);
+  opacity:0;
+  transition:opacity .1s linear;
+  pointer-events:none;
+}
+button.team:active::before{opacity:.15}
+
+button.team .logo{
+  width:30px;height:30px;
+  flex:none;
+  position:relative;
+  border-radius:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--tc,#444);
+  box-shadow:0 0 0 1px var(--ink);
+  overflow:hidden;
+}
+button.team .logo img{width:100%;height:100%;object-fit:contain;padding:2px;position:relative}
+button.team .logo .abbr{
+  font:700 10px/1 var(--agate);
+  letter-spacing:-.03em;
+  color:#fff;
+  text-shadow:0 0 2px rgba(0,0,0,.92),0 1px 0 rgba(0,0,0,.7);
+}
+button.team .nm{
+  position:relative;
+  min-width:0;
+  padding-right:2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+/* the mark sits in the corner of the box so it never eats the club name */
+button.team .tag{
+  position:absolute;
+  top:5px;
+  right:5px;
+  z-index:1;
+  flex:none;
+  font:700 8px/1 var(--agate);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--dim);
+  background:var(--paper);
+  border:1px solid var(--rule-mid);
+  border-radius:0;
+  padding:3px 3px;
+}
+
+/* marked: knocked out of the paper in reverse */
+button.team.sel{background:var(--ink);color:var(--paper)}
+button.team.sel::before{opacity:.14}
+button.team.sel .logo{box-shadow:0 0 0 1px var(--paper)}
+button.team.sel .tag{background:var(--ink);color:var(--paper);border-color:var(--paper)}
+
+/* already filed with the commissioner: the second-run frame */
+button.team.mypick{box-shadow:inset 0 0 0 3px var(--spot)}
+button.team.mypick .tag{color:var(--spot);border-color:var(--spot);background:var(--paper)}
+button.team.sel.mypick .tag{background:var(--ink)}
+
+/* struck off / closed */
+button.team.used,button.team.locked{cursor:default}
+button.team.used .nm,button.team.locked .nm{color:var(--dim)}
+button.team.used .nm{text-decoration:line-through;text-decoration-color:var(--spot)}
+button.team.used .logo,button.team.locked .logo{
+  opacity:.4;
+  filter:grayscale(1);
+  box-shadow:0 0 0 1px var(--rule-mid);
+}
+button.team.used:active::before,button.team.locked:active::before{opacity:0}
+
+/* ---------- submit rail ------------------------------------------------- */
+.submitbar{
+  position:sticky;
+  bottom:0;
+  z-index:5;
+  margin:0 -6px;
+  padding:12px 6px 10px;
+  background:var(--paper);
+  border-top:2px solid var(--ink);
+}
+
+button.big{
+  display:block;
+  width:100%;
+  -webkit-appearance:none;
+  appearance:none;
+  background:var(--ink);
+  color:var(--paper);
+  border:2px solid var(--ink);
+  border-radius:0;
+  padding:16px 12px;
+  min-height:54px;
+  font:700 13px/1.15 var(--agate);
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+button.big:active{background:var(--spot);border-color:var(--spot);color:#fff}
+button.big:disabled{
+  background:none;
+  color:var(--dim);
+  border:1px dashed var(--rule-mid);
+  cursor:default;
+  opacity:1;
+  font-weight:700;
+}
+button.big.sec{background:none;color:var(--ink);border:2px solid var(--ink)}
+button.big.sec:active{background:var(--ink);color:var(--paper)}
+button.big + button.big{margin-top:10px}
+.mini{
+  width:auto!important;
+  padding:11px 13px!important;
+  font-size:11px!important;
+  min-height:44px;
+  letter-spacing:.13em;
+}
+
+/* ---------- the roster call sheet --------------------------------------- */
+#nameList{border-top:2px solid var(--ink);margin-top:4px}
+.namebtn{
+  display:block;
+  width:100%;
+  text-align:left;
+  -webkit-appearance:none;
+  appearance:none;
+  background:none;
+  border:0;
+  border-bottom:1px solid var(--rule);
+  border-radius:0;
+  color:var(--ink);
+  padding:14px 2px;
+  min-height:54px;
+  margin:0;
+  font:700 17px/1.2 var(--head);
+  cursor:pointer;
+}
+.namebtn:active{background:var(--tint-ink)}
+.namebtn.taken{color:var(--dim);opacity:1}
+.namebtn .tag{
+  float:right;
+  margin-top:2px;
+  font:700 9px/1 var(--agate);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--spot);
+  border:1px solid var(--spot);
+  border-radius:0;
+  padding:3px 5px;
+}
+.namebtn .tag:empty{display:none}
+
+/* ---------- form: printed fill-in fields -------------------------------- */
+input[type=text],input[type=email],input[type=tel],select,textarea{
+  width:100%;
+  -webkit-appearance:none;
+  appearance:none;
+  background-color:var(--paper-lift);
+  background-image:none;
+  border:1.5px solid var(--ink);
+  border-radius:0;
+  color:var(--ink);
+  padding:13px 12px;
+  min-height:50px;
+  margin:0 0 14px;
+  font:400 17px/1.2 var(--serif);
+}
+input::placeholder,textarea::placeholder{color:var(--dim);opacity:1}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--spot);outline-offset:1px}
+.fieldlabel{
+  display:block;
+  margin:16px 0 7px;
+  font:700 10px/1 var(--agate);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.checkrow{
+  display:flex;
+  gap:11px;
+  align-items:flex-start;
+  margin:16px 0 4px;
+  font:400 15px/1.45 var(--serif);
+  cursor:pointer;
+}
+.checkrow input{
+  width:22px;height:22px;
+  flex:none;
+  margin:2px 0 0;
+  -webkit-appearance:checkbox;
+  appearance:auto;
+  accent-color:var(--ink);
+}
+
+/* ---------- money: the second press run does the asking ----------------- */
+.paybox{
+  background:var(--paper-lift);
+  border:2px solid var(--ink);
+  border-radius:0;
+  padding:15px 14px;
+  margin:18px 0;
+}
+.paybox > br{display:none}
+.paybox > b:first-child{
+  display:block;
+  margin-bottom:6px;
+  font:700 12px/1.3 var(--agate);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.venmo{
+  display:block;
+  text-align:center;
+  text-decoration:none;
+  background:var(--spot);
+  color:#fff;
+  border:2px solid var(--spot);
+  border-radius:0;
+  padding:16px 12px;
+  min-height:54px;
+  margin:14px 0 10px;
+  font:700 12px/1.2 var(--agate);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.venmo:active{background:var(--ink);border-color:var(--ink)}
+
+/* ---------- the buyback: a boxed ad in the sports section --------------- */
+.card.buyback{
+  background:var(--paper-lift);
+  border:3px solid var(--ink);
+  border-radius:0;
+  outline:1px solid var(--ink);
+  outline-offset:3px;
+  padding:20px 15px 18px;
+  margin:6px 0 28px;
+}
+.buyback .bbhead{text-align:center;margin-bottom:15px}
+.buyback .bbtag{
+  display:inline-block;
+  margin-bottom:11px;
+  padding:4px 9px;
+  background:var(--spot);
+  color:#fff;
+  border:0;
+  border-radius:0;
+  font:700 9px/1 var(--agate);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+.buyback h2{
+  margin:0 0 7px;
+  padding:0;
+  border:0;
+  font:700 30px/1.02 var(--head);
+  letter-spacing:-.02em;
+  text-transform:none;
+  color:var(--ink);
+}
+.buyback .bbhead .muted{font-size:15px;color:var(--ink)}
+.buyback .bbrules{
+  counter-reset:bb;
+  list-style:none;
+  margin:14px 0 12px;
+  padding:0;
+  border-top:1px solid var(--rule);
+}
+.buyback .bbrules li{
+  position:relative;
+  margin:0;
+  padding:9px 0 9px 26px;
+  border-bottom:1px solid var(--rule);
+  font:400 14px/1.5 var(--serif);
+  color:var(--dim);
+}
+.buyback .bbrules li::before{
+  counter-increment:bb;
+  content:counter(bb);
+  position:absolute;
+  left:0;top:11px;
+  font:700 10px/1 var(--agate);
+  letter-spacing:.06em;
+  color:var(--spot);
+}
+.buyback .bbrules b{color:var(--ink);font-weight:700}
+
+/* ---------- league pick board: a results table with leaders ------------- */
+.boardtools{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin:0;
+  padding:0 0 12px;
+}
+.boardtools label,.boardtools label.muted{
+  margin-left:auto;
+  font:700 10px/1 var(--agate);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.boardtools select{
+  width:auto;
+  margin:0;
+  min-height:44px;
+  padding:11px 30px 11px 11px;
+  font:700 11px/1 var(--agate);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background-color:var(--paper-lift);
+  background-image:linear-gradient(45deg,rgba(0,0,0,0) 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,rgba(0,0,0,0) 50%);
+  background-position:calc(100% - 17px) 20px,calc(100% - 12px) 20px;
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+}
+
+.boardrow{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:0;
+  padding:11px 0;
+  border-bottom:1px solid var(--rule);
+  font:400 16px/1.3 var(--serif);
+}
+.boardrow:last-child{border-bottom:0}
+.boardrow .player{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.boardrow .player::after{
+  content:"";
+  flex:1 1 auto;
+  min-width:12px;
+  height:1px;
+  margin:0 9px;
+  background-image:repeating-linear-gradient(to right,var(--rule-mid) 0,var(--rule-mid) 2px,rgba(0,0,0,0) 2px,rgba(0,0,0,0) 5px);
+}
+.boardrow .player .muted{
+  flex:none;
+  margin-left:6px;
+  font:400 11px/1 var(--agate);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.boardrow .pick{
+  flex:0 1 auto;
+  min-width:0;
+  text-align:right;
+  font:400 11px/1.35 var(--agate);
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.boardrow .pick.live{color:var(--ink);font-weight:700;letter-spacing:.06em}
+
+/* ---------- your season: a two-column game log -------------------------- */
+.hist{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:0 18px;
+  border-top:2px solid var(--ink);
+}
+.hist > span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:46px;
+  padding:8px 4px 8px 9px;
+  border:0;
+  border-bottom:1px solid var(--rule);
+  border-left:4px solid var(--rule-mid);
+  border-radius:0;
+  background:none;
+  font:400 14px/1.2 var(--serif);
+  font-weight:400;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.hist > span > b{
+  order:-1;
+  flex:none;
+  font:700 10px/1 var(--agate);
+  letter-spacing:.09em;
+  color:var(--dim);
+  opacity:1;
+}
+.hist .logo{
+  width:22px;height:22px;
+  flex:none;
+  position:relative;
+  border-radius:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--tc,#444);
+  box-shadow:0 0 0 1px var(--ink);
+  overflow:hidden;
+}
+.hist .logo img{width:100%;height:100%;object-fit:contain;padding:1px}
+.hist .logo .abbr{
+  font:700 8px/1 var(--agate);
+  color:#fff;
+  text-shadow:0 0 2px rgba(0,0,0,.92);
+}
+.hist > span.W{border-left-color:var(--ink)}
+.hist > span.W > b{color:var(--ink)}
+.hist > span.L,.hist > span.T,.hist > span.MISS{
+  border-left-color:var(--spot);
+  background:var(--tint-spot);
+  color:var(--spot);
+}
+.hist > span.L > b,.hist > span.T > b,.hist > span.MISS > b{color:var(--spot)}
+.hist > span.L > .logo,.hist > span.T > .logo,.hist > span.MISS > .logo{filter:grayscale(1);opacity:.5}
+
+/* ---------- standings --------------------------------------------------- */
+.standrow{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  padding:9px 0;
+  border-bottom:1px solid var(--rule);
+  font:400 15px/1.3 var(--serif);
+}
+.standrow:last-child{border-bottom:0}
+.standrow > span:first-child{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.standrow > span:first-child::after{
+  content:"";
+  flex:1 1 auto;
+  min-width:12px;
+  height:1px;
+  margin:0 9px;
+  background-image:repeating-linear-gradient(to right,var(--rule) 0,var(--rule) 2px,rgba(0,0,0,0) 2px,rgba(0,0,0,0) 5px);
+}
+.standrow .st{
+  flex:0 0 auto;
+  font:700 10px/1 var(--agate);
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+.standrow .st.alive{color:var(--ink)}
+.standrow .st.out{color:var(--dim);font-weight:400}
+
+/* ---------- the pot line ------------------------------------------------ */
+.potline{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  padding:5px 0;
+}
+.potline > span:first-child{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  font:700 10px/1.4 var(--agate);
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.potline > span:first-child::after{
+  content:"";
+  flex:1 1 auto;
+  min-width:12px;
+  height:1px;
+  margin:0 9px;
+  background-image:repeating-linear-gradient(to right,var(--rule) 0,var(--rule) 2px,rgba(0,0,0,0) 2px,rgba(0,0,0,0) 5px);
+}
+.potline > b{
+  flex:0 0 auto;
+  font:700 22px/1 var(--agate);
+  letter-spacing:-.02em;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.potline.muted{font-size:inherit;color:inherit}
+.potline .count{
+  flex:0 0 auto;
+  font:400 10px/1.4 var(--agate);
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.count{font-variant-numeric:tabular-nums}
+
+/* ---------- running text, bulletins, disclosures ------------------------ */
+.muted{color:var(--dim);font:400 14px/1.55 var(--serif)}
+
+.err{
+  background:var(--tint-spot);
+  border:0;
+  border-left:5px solid var(--spot);
+  border-radius:0;
+  padding:12px 14px;
+  margin:0 0 16px;
+  font:400 15px/1.5 var(--serif);
+  color:var(--ink);
+}
+.err b{color:var(--spot);font-weight:700}
+.ok{
+  background:var(--tint-ink);
+  border:0;
+  border-left:5px solid var(--ink);
+  border-radius:0;
+  padding:12px 14px;
+  margin:0 0 16px;
+  font:400 15px/1.5 var(--serif);
+  color:var(--ink);
+}
+
+details,.disc{
+  margin:14px 0 0;
+  padding:9px 0 0;
+  border-top:1px solid var(--rule);
+}
+details summary,details summary.muted,.disc > summary,.disc > summary.muted{
+  display:block;
+  list-style:none;
+  min-height:36px;
+  padding:7px 0;
+  font:700 10px/1.2 var(--agate);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink);
+  cursor:pointer;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:" \002B";color:var(--spot);font-weight:700}
+details[open] > summary::after{content:" \2212"}
+details pre{
+  margin:6px 0 10px;
+  padding:11px 12px;
+  background:var(--tint-ink);
+  border-left:3px solid var(--rule-mid);
+  overflow-x:auto;
+}
+
+/* ---------- toast: a rubber stamp --------------------------------------- */
+#toast{
+  position:fixed;
+  bottom:88px;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:calc(100vw - 36px);
+  background:var(--ink);
+  color:var(--paper);
+  border:0;
+  border-radius:0;
+  padding:13px 17px;
+  display:none;
+  z-index:60;
+  text-align:center;
+  font:700 12px/1.4 var(--agate);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  box-shadow:4px 4px 0 rgba(20,18,15,.22);
+}
+
+/* ---------- press check ------------------------------------------------- */
+.spin{
+  text-align:center;
+  padding:72px 0;
+  color:var(--dim);
+  font:700 11px/1 var(--agate);
+  letter-spacing:.26em;
+  text-transform:uppercase;
+}
+.spin::after{
+  content:"";
+  display:block;
+  width:46px;
+  height:3px;
+  margin:18px auto 0;
+  background:var(--ink);
+  animation:sv-press 1.1s ease-in-out infinite;
+}
+@keyframes sv-press{
+  0%{transform:scaleX(.12);opacity:.3}
+  50%{transform:scaleX(1);opacity:1}
+  100%{transform:scaleX(.12);opacity:.3}
+}
+@media (prefers-reduced-motion:reduce){
+  .spin::after{animation:none;opacity:.6}
+  button.team::before{transition:none}
+}
+
+/* ---------- colophon ---------------------------------------------------- */
+footer{
+  max-width:560px;
+  margin:0 auto;
+  padding:0 18px 34px;
+  color:var(--dim);
+  font:400 10px/1.7 var(--agate);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+footer::before{
+  content:"";
+  display:block;
+  border-top:1px solid var(--rule);
+  margin:0 0 12px;
+}
+
+/* ---------- a little more air on bigger glass --------------------------- */
+@media (min-width:520px){
+  header h1{font-size:38px}
+  main,header,footer,.sectionnav{padding-left:24px;padding-right:24px}
+  .card h2{font-size:13px}
+  button.team{font-size:17px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="hName">Mehrle Survivor</span></h1>
+  <div class="who" id="hWho"></div>
+</header>
+<nav class="sectionnav" id="sectionNav" aria-label="Pool sections"></nav>
+<main id="app"><div class="spin">Loading…</div></main>
+<footer id="foot"></footer>
+<div id="toast"></div>
+<script>
+"use strict";
+// ================= config =================
+const SUPABASE_URL = "https://inbgusprbxtvmdpeqksn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluYmd1c3ByYnh0dm1kcGVxa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTk2OTMsImV4cCI6MjA5OTgzNTY5M30.QUM68361lXHWqetmzA-LFOu6W33Goj-sZp5JwJUpZXs";
+const DEMO = /(\?|&)demo=(1|picked|out|used|new)\b/.test(location.search);
+const VENMO_URL = 'https://venmo.com/u/Noah-Mehrle';
+
+const TEAM_NAMES = {ARI:'Cardinals',ATL:'Falcons',BAL:'Ravens',BUF:'Bills',CAR:'Panthers',CHI:'Bears',
+CIN:'Bengals',CLE:'Browns',DAL:'Cowboys',DEN:'Broncos',DET:'Lions',GB:'Packers',HOU:'Texans',IND:'Colts',
+JAX:'Jaguars',KC:'Chiefs',LV:'Raiders',LAC:'Chargers',LAR:'Rams',MIA:'Dolphins',MIN:'Vikings',NE:'Patriots',
+NO:'Saints',NYG:'Giants',NYJ:'Jets',PHI:'Eagles',PIT:'Steelers',SF:'49ers',SEA:'Seahawks',TB:'Buccaneers',
+TEN:'Titans',WSH:'Commanders'};
+// Official club colours (ESPN team API, fetched 2026-08-07). A few clubs are
+// near-black, which vanishes on this background, so those use their alternate.
+const TEAM_COLORS = {ARI:'#a40227',ATL:'#a71930',BAL:'#29126f',BUF:'#00338d',CAR:'#0085ca',CHI:'#0b1c3a',
+CIN:'#fb4f14',CLE:'#ff3c00',DAL:'#002a5c',DEN:'#fc4c02',DET:'#0076b6',GB:'#204e32',HOU:'#eb0028',
+IND:'#003b75',JAX:'#007487',KC:'#e31837',LV:'#a5acaf',LAC:'#0080c6',LAR:'#003594',MIA:'#008e97',
+MIN:'#4f2683',NE:'#002a5c',NO:'#d3bc8d',NYG:'#003c7f',NYJ:'#115740',PHI:'#06424d',PIT:'#ffb612',
+SF:'#aa0000',SEA:'#69be28',TB:'#bd1c36',TEN:'#4495d2',WSH:'#5a1414'};
+// Logos are a progressive enhancement: the coloured badge with the abbreviation is
+// painted first and the crest sits on top only if it loads, so an offline phone or a
+// blocked CDN degrades to a readable badge instead of a broken image.
+function teamLogo(abbr){
+  return '<span class="logo" style="--tc:' + (TEAM_COLORS[abbr] || '#444') + '">'
+    + '<span class="abbr">' + esc(abbr) + '</span>'
+    + '<img alt="" loading="lazy" src="https://a.espncdn.com/i/teamlogos/nfl/500/' + encodeURIComponent(abbr.toLowerCase()) + '.png"'
+    + ' onload="this.previousElementSibling.style.display=\'none\'"'
+    + ' onerror="this.remove()"></span>';
+}
+
+// ================= state =================
+let sb = null, session = null;
+let db = { league:null, players:[], week:null, myPick:null, board:[], boardWeek:null };
+let me = { pid: localStorage.getItem('survivor_pid') || null, player:null };
+let sel = null;      // currently tapped team
+const requestedScreen = new URLSearchParams(location.search).get('screen');
+// Default to 'home'. Under legacy_claim a device with no survivor_pid is far more
+// often a ROSTERED player on a new/wiped phone than a brand-new entrant, and
+// landing them on the $10 Venmo form invites a second payment for an entry they
+// already bought. 'home' renders the claim list, which carries an explicit
+// "I'm new" route to Join for people who actually are.
+let view = ['join','home','board'].indexOf(requestedScreen) >= 0 ? requestedScreen : 'home';
+let boardSort = 'player';
+let authMode = 'legacy_claim';
+const pendingLoginEmail = sessionStorage.getItem('survivor_login_email') || '';
+let loginState = {email:pendingLoginEmail, sent:!!pendingLoginEmail, busy:false, message:''};
+let signupState = {busy:false, done:false, email:'', message:'', form:{name:'',email:'',phone:''}};
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', 3000);
+}
+function fmtKick(iso){
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', {weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short'}).replace(/,/g, '');
+}
+function money(n){ return '$' + (+n || 0).toLocaleString(); }
+function getSignupToken(){
+  const yr = (db.league && db.league.config && db.league.config.seasonYear) || 'current';
+  const key = 'survivor_signup_token_' + String(yr);
+  let token = localStorage.getItem(key) || '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)){
+    token = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+        });
+    localStorage.setItem(key, token);
+  }
+  return token;
+}
+
+// ================= data =================
+function isAnonymousSession(s){ return !!(s && s.user && (s.user.is_anonymous === true || !s.user.email)); }
+
+async function loadBootstrap(){
+  // Always bootstrap as the public anon role. A stored legacy/email session may be
+  // authenticated but unmapped, so using the session-bound client can hide authMode.
+  const r = await fetch(SUPABASE_URL + '/rest/v1/league?id=eq.1&select=config%2Cupdated_at', {
+    cache:'no-store', headers:{apikey:SUPABASE_ANON_KEY, Authorization:'Bearer ' + SUPABASE_ANON_KEY}
+  });
+  if (!r.ok) throw new Error('Could not read the pool login settings.');
+  const rows = await r.json();
+  db.league = (rows && rows[0]) || {config:{}, state:{}};
+  authMode = (db.league.config && db.league.config.authMode) || 'legacy_claim';
+}
+
+async function prepareSession(){
+  const { data, error } = await sb.auth.getSession();
+  if (error) throw error;
+  session = data.session || null;
+  if (authMode === 'email_otp'){
+    if (isAnonymousSession(session)){
+      await sb.auth.signOut();
+      session = null;
+    } else if (session){
+      const mine = await sb.rpc('get_my_player');
+      if (mine.error) throw mine.error;
+      const mapped = Array.isArray(mine.data) ? mine.data[0] : mine.data;
+      if (!mapped || !mapped.pid){
+        loginState.email = (session.user && session.user.email) || loginState.email;
+        loginState.sent = false;
+        sessionStorage.removeItem('survivor_login_email');
+        await sb.auth.signOut();
+        session = null;
+      }
+    }
+    me.pid = null; me.player = null; localStorage.removeItem('survivor_pid');
+    return;
+  }
+  if (session && !isAnonymousSession(session)){
+    await sb.auth.signOut();
+    session = null;
+  }
+  if (!session){
+    const { data: d2, error: e2 } = await sb.auth.signInAnonymously();
+    if (e2) throw e2;
+    session = d2.session;
+  }
+}
+
+async function loadPickBoard(){
+  db.board = []; db.boardWeek = null;
+  if (!session) return;
+  const { data, error } = await sb.rpc('get_pick_board', {p_week:null});
+  if (error) throw error;
+  db.board = Array.isArray(data) ? data : [];
+  db.boardWeek = db.board.length ? db.board[0].board_week : null;
+}
+
+async function submitSignupRequest(name, email, phone, venmoSent){
+  name = String(name || '').trim();
+  email = String(email || '').trim().toLowerCase();
+  phone = String(phone || '').trim();
+  if (name.length < 2) throw new Error('Enter your full name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.');
+  if (phone.replace(/\D/g, '').length < 10) throw new Error('Enter a valid mobile number.');
+  if (!venmoSent) throw new Error('Confirm that you sent the Venmo entry fee.');
+  signupState.form = {name, email, phone};
+  signupState.busy = true; signupState.message = ''; render();
+  if (DEMO){
+    signupState = {busy:false, done:true, email, message:'', form:{name:'',email:'',phone:''}}; render(); return;
+  }
+  let temporarySession = false;
+  if (!session){
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) throw error;
+    session = data.session; temporarySession = true;
+  }
+  const { error } = await sb.rpc('submit_signup_request', {
+    p_name:name, p_email:email, p_phone:phone, p_venmo_sent:true, p_client_token:getSignupToken()
+  });
+  if (error){
+    if (temporarySession){ try{ await sb.auth.signOut(); }catch(e){} session = null; }
+    throw error;
+  }
+  signupState = {busy:false, done:true, email, message:'', form:{name:'',email:'',phone:''}};
+  if (temporarySession){ try{ await sb.auth.signOut(); }catch(e){} session = null; }
+  render();
+}
+
+async function loadAll(){
+  let mapped = null;
+  if (authMode === 'email_otp'){
+    if (!session || isAnonymousSession(session)) throw new Error('Please sign in with your email code.');
+    const mine = await sb.rpc('get_my_player');
+    if (mine.error) throw mine.error;
+    mapped = Array.isArray(mine.data) ? mine.data[0] : mine.data;
+    if (!mapped || !mapped.pid) throw new Error('This signed-in email is not linked to an active pool account. Ask Noah to check the roster email.');
+    me.pid = mapped.pid;
+  }
+  const playerColumns = authMode === 'email_otp'
+    ? 'pid,name,alive,elim_week,used_teams'
+    : 'pid,name,claim_uid,alive,elim_week,used_teams';
+  const [lg, pl, wk] = await Promise.all([
+    sb.from('league').select('config,state,updated_at').eq('id', 1).maybeSingle(),
+    sb.from('players').select(playerColumns).order('name'),
+    sb.from('weeks').select('week,kicks,games,first_kickoff').order('week'),
+  ]);
+  if (lg.error || pl.error || wk.error) throw (lg.error || pl.error || wk.error);
+  db.league = lg.data || {config:{}, state:{}};
+  db.players = pl.data || [];
+  // pick week = first published week that still has a game in the future
+  const now = Date.now();
+  db.week = null;
+  for (const w of (wk.data || [])){
+    const kicks = w.kicks || {};
+    if (Object.values(kicks).some(iso => new Date(iso).getTime() > now)){ db.week = w; break; }
+  }
+  me.player = me.pid ? db.players.find(p => p.pid === me.pid) : null;
+  // device thinks it's someone, but the claim was reset or belongs to another uid -> back to claim
+  if (authMode !== 'email_otp' && me.player && me.player.claim_uid && session && me.player.claim_uid !== session.user.id){
+    me.player = null; me.pid = null; localStorage.removeItem('survivor_pid');
+  }
+  db.myPick = null;
+  if (me.player && db.week){
+    const { data, error } = await sb.from('picks').select('id,team,week,submitted_at')
+      .eq('pid', me.pid).eq('week', db.week.week).maybeSingle();
+    if (error) throw error;
+    db.myPick = data || null;
+  }
+  await loadPickBoard();
+}
+
+async function sendLoginCode(email){
+  email = String(email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.');
+  loginState.email = email;
+  loginState.busy = true; loginState.message = ''; render();
+  if (session){ await sb.auth.signOut(); session = null; }
+  const { error } = await sb.auth.signInWithOtp({email, options:{shouldCreateUser:false}});
+  loginState.busy = false;
+  if (error) throw error;
+  loginState.email = email; loginState.sent = true;
+  sessionStorage.setItem('survivor_login_email', email);
+  render();
+}
+
+async function verifyLoginCode(code){
+  code = String(code || '').replace(/\D/g, '');
+  if (!/^\d{6}$/.test(code)) throw new Error('Enter the 6-digit code from the email.');
+  loginState.busy = true; loginState.message = ''; render();
+  const { data, error } = await sb.auth.verifyOtp({email:loginState.email, token:code, type:'email'});
+  if (error){ loginState.busy = false; throw error; }
+  session = data.session;
+  loginState = {email:'',sent:false,busy:false,message:''};
+  sessionStorage.removeItem('survivor_login_email');
+  await loadAll(); render();
+}
+
+async function signOutPlayer(){
+  await sb.auth.signOut();
+  session = null; me.pid = null; me.player = null; db.players = []; db.week = null; db.myPick = null;
+  localStorage.removeItem('survivor_pid'); sessionStorage.removeItem('survivor_login_email');
+  loginState = {email:'',sent:false,busy:false,message:''};
+  await loadBootstrap();
+  if (authMode !== 'email_otp') await prepareSession();
+  render();
+}
+
+async function claim(pid){
+  const { data, error } = await sb.rpc('claim_player', { p_pid: pid });
+  if (error){ toast('Claim failed: ' + error.message); return; }
+  if (data !== true){
+    toast('That name is already claimed on another phone. If it’s really you, ask Noah to reset it.');
+    return;
+  }
+  me.pid = pid; localStorage.setItem('survivor_pid', pid);
+  view = 'home';
+  await loadAll(); render();
+  toast('Welcome, ' + (me.player ? me.player.name : pid) + '!');
+}
+
+async function submitPick(){
+  if (!sel || !me.player || !db.week) return;
+  const requested = sel;
+  const wk = db.week.week;
+  const id = me.pid + '_w' + wk;
+  const btn = document.getElementById('submitBtn');
+  if (btn) btn.disabled = true;
+  let error = null;
+  if (db.myPick){
+    ({ error } = await sb.from('picks').update({ team: sel }).eq('id', id));
+  } else {
+    ({ error } = await sb.from('picks').insert({ id, pid: me.pid, week: wk, team: sel }));
+    if (error && (error.code === '23505')){ // raced our own earlier insert
+      ({ error } = await sb.from('picks').update({ team: sel }).eq('id', id));
+    }
+  }
+  if (error){
+    const msg = /row-level security/i.test(error.message)
+      ? 'The league server refused this pick — the game may have kicked off, or you’ve already used that team.'
+      : error.message;
+    toast(msg);
+    await loadAll(); render();
+    return;
+  }
+  await loadAll();
+  if (!db.myPick || db.myPick.team !== requested){
+    sel = null;
+    render();
+    toast('Pick was not changed — your original game may already have kicked off.');
+    return;
+  }
+  sel = null;
+  render();
+  toast('Locked in: ' + (TEAM_NAMES[db.myPick.team] || db.myPick.team) + ' — you can change it until kickoff');
+}
+
+// ================= demo mode =================
+// ?demo=1 is the default (alive, hasn't picked). The other scenarios exist because
+// those are the screens that are hard to reason about in the abstract and impossible
+// to see in the real app until they happen to a real person mid-season:
+//   ?demo=picked  already locked a pick in
+//   ?demo=out     eliminated, one buyback offered
+//   ?demo=used    eliminated, buyback already spent — final
+//   ?demo=new     this phone has never claimed a name
+function loadDemo(){
+  const t = h => new Date(Date.now() + h * 3600e3).toISOString();
+  const scenario = (new URLSearchParams(location.search).get('demo') || '1').toLowerCase();
+  const out = scenario === 'out', used = scenario === 'used';
+  const dead = out || used;
+  const me_state = {name:'Demo You', alive:!dead, picks:{1:{team:'DEN', outcome:'W'}, 2:{team:'ARI', outcome:dead ? 'L' : 'W'}}};
+  if (dead){
+    me_state.elimWeek = 2;
+    me_state.buybackUsed = used;
+    me_state.buybackEligible = out;
+    me_state.buybackPrice = out ? 30 : null;
+    me_state.buybackReentryWeek = out ? 3 : null;
+  }
+  db.league = {config:{leagueName:'Mehrle Survivor (DEMO)', seasonYear:2026, entryFee:10},
+    state:{pot:{entry:700, bb: out || used ? 30 : 0, total: out || used ? 730 : 700},
+      aliveCount: dead ? 2 : 3, lastApplied:2,
+      recap:'🏈 Demo recap — week 2 results…',
+      players:{demo_you: me_state}}};
+  db.players = [
+    {pid:'demo_you', name:'Demo You', claim_uid:'me', alive:!dead, elim_week: dead ? 2 : null, used_teams:['DEN','ARI']},
+    {pid:'demo_amy', name:'Amy (demo)', claim_uid:null, alive:true, used_teams:[]},
+    {pid:'demo_joe', name:'Joe (demo)', claim_uid:null, alive:false, elim_week:2, used_teams:[]},
+  ];
+  db.week = {week:3, first_kickoff:t(2),
+    games:[['CIN','CLE',t(2)],['DEN','KC',t(5)],['DAL','PHI',t(-1)],['BUF','MIA',t(26)]],
+    kicks:{CIN:t(2), CLE:t(2), DEN:t(5), KC:t(5), DAL:t(-1), PHI:t(-1), BUF:t(26), MIA:t(26)}};
+  if (scenario === 'new'){
+    // never-claimed phone: this is the very first thing a real player sees
+    me.pid = null; me.player = null;
+    db.players[0].claim_uid = null;
+  } else {
+    me.pid = 'demo_you'; me.player = db.players[0];
+  }
+  db.myPick = scenario === 'picked' ? {team:'CIN', week:3} : null;
+  db.boardWeek = 3;
+  db.board = [
+    {board_week:3,pid:'demo_you',player_name:'Demo You',alive:!dead,elim_week: dead ? 2 : null,
+     team: scenario === 'picked' ? 'CIN' : null, pick_status: dead ? 'out' : 'hidden', is_self:true},
+    {board_week:3,pid:'demo_amy',player_name:'Amy (demo)',alive:true,team:'DAL',pick_status:'revealed',is_self:false},
+    {board_week:3,pid:'demo_joe',player_name:'Joe (demo)',alive:false,elim_week:2,team:null,pick_status:'out',is_self:false},
+  ];
+  session = {user:{id:'me'}};
+  if (!requestedScreen) view = 'home';
+}
+
+// ================= render =================
+function render(){
+  const app = document.getElementById('app');
+  const cfg = (db.league && db.league.config) || {};
+  document.getElementById('hName').textContent = cfg.leagueName || 'Mehrle Survivor';
+  document.title = cfg.leagueName || 'Mehrle Survivor';
+  const who = document.getElementById('hWho');
+  who.innerHTML = me.player ? esc(me.player.name) + ' · <a href="#" id="' + (authMode === 'email_otp' ? 'signOutLink' : 'switchLink') + '">'
+    + (authMode === 'email_otp' ? 'sign out' : 'switch') + '</a>' : '';
+  document.getElementById('foot').textContent = DEMO ? 'DEMO MODE — nothing is saved' :
+    'Picks lock at each game’s kickoff. Problems? Text Noah.';
+
+  renderSectionNav();
+  if (view === 'join'){ app.innerHTML = renderSignup(); wire(); return; }
+  if (view === 'board'){ app.innerHTML = renderPickBoard(); wire(); return; }
+
+  if (!me.player){ app.innerHTML = authMode === 'email_otp' ? renderLogin() : renderClaim(); wire(); return; }
+
+  let h = '';
+  const st = (db.league && db.league.state) || {};
+  const meState = (st.players || {})[me.pid] || {};
+  const alive = me.player.alive;
+  let outSub = 'Your entry is eliminated.';
+  if (!alive && meState.buybackEligible){
+    outSub = 'But you get one buyback \u2014 see below.';
+  } else if (!alive && meState.buybackUsed){
+    outSub = 'Your one buyback was already used, so this loss is final.';
+  } else if (!alive && me.player.elim_week > 5){
+    outSub = 'Buybacks are only available after losses in Weeks 1–5.';
+  }
+  h += '<div class="statusband ' + (alive ? 'alive' : 'out') + '"><div>' +
+    (alive ? 'Still alive' : 'Eliminated' + (me.player.elim_week ? ' — week ' + me.player.elim_week : '')) +
+    '<div class="sub">' + (alive
+      ? esc((st.aliveCount != null ? st.aliveCount + ' of ' + db.players.length + ' still standing' : ''))
+      : esc(outSub)) + '</div></div>' +
+    (st.pot ? '<div style="text-align:right">' + money(st.pot.total) + '<div class="sub">pot</div></div>' : '') + '</div>';
+
+  if (alive) h += renderPickCard();
+  else if (meState.buybackEligible) h += renderBuyback(meState);
+  h += renderHistory(meState);
+  h += renderLeague(st);
+  app.innerHTML = h;
+  wire();
+}
+
+function renderSectionNav(){
+  const items = [['join','Join'],['home','My Pick'],['board','League Picks']];
+  document.getElementById('sectionNav').innerHTML = items.map(x =>
+    '<button type="button" class="navbtn' + (view === x[0] ? ' on' : '') + '" data-view="' + x[0] + '">' + x[1] + '</button>'
+  ).join('');
+}
+
+function renderSignup(){
+  const cfg = (db.league && db.league.config) || {};
+  const fee = cfg.entryFee != null ? +cfg.entryFee : 10;
+  if (signupState.done){
+    return '<div class="card"><div class="ok"><b>Entry received.</b><br>Noah will review your information and verify the Venmo payment.</div>'
+      + '<h2>What happens next</h2><p class="muted">Your payment checkbox is a confirmation from you—not an automatic payment check. '
+      + 'Once Noah adds and approves you, use <b>My Pick</b> to claim or sign in to your account.</p>'
+      + '<button type="button" class="big sec" id="afterSignupMyPick">Go to My Pick</button></div>';
+  }
+  const f = signupState.form || {};
+  let h = '<div class="card"><h2>Join ' + esc(cfg.leagueName || 'Mehrle Survivor') + '</h2>'
+    + '<p class="muted">Enter your own contact information so Noah can add you to the pool and reach you about picks.</p>';
+  if (signupState.message) h += '<div class="err">' + esc(signupState.message) + '</div>';
+  h += '<form id="signupForm">'
+    + '<label class="fieldlabel" for="signupName">Full name</label>'
+    + '<input type="text" id="signupName" value="' + esc(f.name || '') + '" autocomplete="name" maxlength="80" placeholder="First and last name" required>'
+    + '<label class="fieldlabel" for="signupEmail">Email</label>'
+    + '<input type="email" id="signupEmail" value="' + esc(f.email || '') + '" autocomplete="email" maxlength="254" placeholder="you@example.com" required>'
+    + '<label class="fieldlabel" for="signupPhone">Mobile phone</label>'
+    + '<input type="tel" id="signupPhone" value="' + esc(f.phone || '') + '" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="(513) 555-0123" required>'
+    + '<p class="muted">Your email and phone stay private and are only shown to Noah.</p>'
+    + '<div class="paybox"><b>Entry fee: ' + money(fee) + '</b><br><span class="muted">Send it to <b>@Noah-Mehrle</b> and put your full name in the Venmo note.</span>'
+    + '<a class="venmo" href="' + esc(VENMO_URL) + '" target="_blank" rel="noopener">Open Venmo @Noah-Mehrle</a>'
+    + '<label class="checkrow"><input type="checkbox" id="venmoSent" required><span><b>I confirm I sent the ' + money(fee) + ' entry fee to @Noah-Mehrle.</b><br>'
+    + '<span class="muted">Noah will still verify the payment before marking you paid.</span></span></label></div>'
+    + '<button type="submit" class="big"' + (signupState.busy ? ' disabled' : '') + '>' + (signupState.busy ? 'Sending…' : 'Send my entry') + '</button></form></div>';
+  return h;
+}
+
+function renderPickBoard(){
+  if (!me.player){
+    return '<div class="card"><h2>League picks</h2><p class="muted">The pick board is private to pool members. Open <b>My Pick</b> and claim your name or sign in first.</p>'
+      + '<button type="button" class="big sec" id="goMyPick">Go to My Pick</button></div>';
+  }
+  if (!db.board.length){
+    return '<div class="card"><h2>League picks</h2><p class="muted">There isn’t a published pick week yet. Check back after Noah publishes the schedule.</p>'
+      + '<button type="button" class="big sec mini" id="boardRefresh">Refresh</button></div>';
+  }
+  const rows = db.board.slice().sort((a,b) => {
+    if (boardSort === 'team'){
+      const at = a.team ? (TEAM_NAMES[a.team] || a.team) : 'zzzz';
+      const bt = b.team ? (TEAM_NAMES[b.team] || b.team) : 'zzzz';
+      const byTeam = at.localeCompare(bt);
+      if (byTeam) return byTeam;
+    }
+    return String(a.player_name || '').localeCompare(String(b.player_name || ''));
+  });
+  let h = '<div class="card"><h2>Week ' + esc(db.boardWeek) + ' league picks</h2>'
+    + '<p class="muted">Other people’s picks unlock only when <b>that team’s game starts</b>. Before kickoff, a saved pick and no pick look exactly the same.</p>'
+    + '<div class="boardtools"><button type="button" class="big sec mini" id="boardRefresh">Refresh</button>'
+    + '<label class="muted" for="boardSort">Sort</label><select id="boardSort"><option value="player"' + (boardSort === 'player' ? ' selected' : '') + '>Player</option>'
+    + '<option value="team"' + (boardSort === 'team' ? ' selected' : '') + '>Revealed team</option></select></div>';
+  for (const r of rows){
+    let pick = 'Hidden until kickoff', cls = '';
+    const ownCurrentPick = r.is_self && db.week && db.week.week === r.board_week && db.myPick;
+    if (r.pick_status === 'revealed' && r.team){ pick = (TEAM_NAMES[r.team] || r.team) + ' (' + r.team + ')'; cls = ' live'; }
+    else if (ownCurrentPick){ pick = 'Your pick: ' + (TEAM_NAMES[db.myPick.team] || db.myPick.team); cls = ' live'; }
+    else if (r.pick_status === 'missing') pick = 'No pick';
+    else if (r.pick_status === 'out') pick = 'Out' + (r.elim_week ? ' — week ' + r.elim_week : '');
+    h += '<div class="boardrow"><span class="player">' + esc(r.player_name) + (r.is_self ? ' <span class="muted">(you)</span>' : '') + '</span>'
+      + '<span class="pick' + cls + '">' + esc(pick) + '</span></div>';
+  }
+  return h + '</div>';
+}
+
+function renderLogin(){
+  const email = esc(loginState.email || '');
+  let h = '<div class="card"><h2>Sign in to your pool account</h2>';
+  if (loginState.message) h += '<div class="' + (loginState.message.indexOf('sent') >= 0 ? 'ok' : 'err') + '">' + esc(loginState.message) + '</div>';
+  if (!loginState.sent){
+    h += '<p class="muted">Use the email Noah has for you. We’ll send a private 6-digit sign-in code—no password to remember.</p>'
+      + '<form id="emailLoginForm"><input type="email" id="loginEmail" value="' + email + '" placeholder="you@example.com" autocomplete="email" required>'
+      + '<button type="submit" class="big"' + (loginState.busy ? ' disabled' : '') + '>' + (loginState.busy ? 'Sending…' : 'Send my code') + '</button></form>';
+  } else {
+    h += '<div class="ok">Code sent. Check your inbox and spam folder.</div>'
+      + '<p class="muted">Enter the 6-digit code sent to <b>' + email + '</b>.</p>'
+      + '<form id="codeLoginForm"><input type="tel" id="loginCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>'
+      + '<button type="submit" class="big"' + (loginState.busy ? ' disabled' : '') + '>' + (loginState.busy ? 'Checking…' : 'Sign in') + '</button></form>'
+      + '<button type="button" class="big sec" id="changeEmailBtn" style="margin-top:10px">Use a different email</button>';
+  }
+  return h + '<p class="muted" style="margin-top:12px">Not receiving a code? Confirm the roster email with Noah.</p></div>';
+}
+
+function renderClaim(){
+  let h = '<div class="card"><h2>Who are you?</h2>';
+  if (!db.players.length){
+    h += '<p class="muted">The roster hasn’t been published yet — check back soon, or text Noah.</p></div>';
+    return h;
+  }
+  h += '<p class="muted">Tap your name to claim it on this phone. One phone per person — if you switch phones, Noah can reset you.</p>' +
+    '<input type="text" id="nameFilter" placeholder="Search your name…" autocomplete="off">' +
+    '<div id="nameList">';
+  for (const p of db.players){
+    const takenByOther = p.claim_uid && (!session || p.claim_uid !== session.user.id);
+    h += '<button type="button" class="namebtn' + (takenByOther ? ' taken' : '') + '" data-pid="' + esc(p.pid) + '"' +
+      (takenByOther ? ' data-taken="1"' : '') + '>' + esc(p.name) +
+      '<span class="tag">' + (takenByOther ? 'claimed' : (p.alive ? '' : 'out wk' + (p.elim_week || '?'))) + '</span></button>';
+  }
+  h += '</div>';
+  // The two ways this list fails a real person, answered in place: their name is
+  // missing (they never joined) or it says "claimed" (old phone still holds it).
+  h += '<p class="muted" style="margin-top:14px">Don’t see your name? You haven’t joined yet — ' +
+    '<a href="#" id="claimGoJoin">enter the pool here</a>.<br>' +
+    'Name there but marked <b>claimed</b>? That’s your old phone. Text Noah and he’ll reset it — ' +
+    'don’t pay again.</p></div>';
+  return h;
+}
+
+// The buyback is the one screen that asks a person for money, and it used to be a
+// grey subtitle inside the red band. It gets the same treatment as the entry fee.
+function renderBuyback(meState){
+  const price = money(meState.buybackPrice);
+  const wk = meState.buybackReentryWeek;
+  const used = (me.player.used_teams || []).map(t => TEAM_NAMES[t] || t);
+  return '<div class="card buyback">'
+    + '<div class="bbhead"><span class="bbtag">Second chance</span>'
+      + '<h2>Buy back in for ' + esc(price) + '</h2>'
+      + '<p class="muted">You’re back in for <b>Week ' + wk + '</b> — everyone else keeps playing without you until then.</p></div>'
+    + '<a class="venmo" href="' + esc(VENMO_URL) + '" target="_blank" rel="noopener">Send ' + esc(price) + ' on Venmo</a>'
+    + '<p class="muted" style="text-align:center;margin:-2px 0 14px">Put your name in the note, then text Noah. He marks you back in by hand.</p>'
+    + '<ul class="bbrules">'
+      + '<li><b>One buyback per season.</b> If you go out again, that’s it.</li>'
+      + '<li>The price is $10 × the week you come back in — it goes up every week you wait.</li>'
+      + '<li>' + (used.length
+          ? 'Teams you already used stay used: <b>' + esc(used.join(', ')) + '</b> — including the one you lost with.'
+          : 'Every team you already used stays used, including the one you lost with.') + '</li>'
+      + '<li>Your money goes straight into the pot.</li>'
+    + '</ul>'
+    + '<p class="muted">Not worth it? Do nothing — you’ll still see everyone else’s picks and the recap each week.</p>'
+    + '</div>';
+}
+
+function renderPickCard(){
+  if (!db.week){
+    return '<div class="card"><h2>This week</h2><p class="muted">No week is open for picks yet — Noah publishes the schedule after grading. Check back soon.</p></div>';
+  }
+  const wk = db.week, now = Date.now();
+  const used = new Set(me.player.used_teams || []);
+  const pickKicked = !!(db.myPick && wk.kicks[db.myPick.team] && new Date(wk.kicks[db.myPick.team]).getTime() <= now);
+  let h = '<div class="card"><h2>Week ' + wk.week + ' — pick your winner</h2>';
+  if (db.myPick){
+    h += '<div class="pickedbanner">Your pick: <b>' + esc(TEAM_NAMES[db.myPick.team] || db.myPick.team) + '</b>' +
+      (pickKicked ? ' — locked, your game has started' : ' — tap another team to change it before kickoff') + '</div>';
+  } else {
+    h += '<div class="err"><b>No pick yet.</b> If you don’t pick before the games, you’re out.</div>';
+  }
+  const games = (wk.games && wk.games.length) ? wk.games : Object.keys(wk.kicks || {}).sort().map(t => [t, null, wk.kicks[t]]);
+  for (const g of games){
+    const [away, home, iso] = g;
+    const kicked = new Date(iso).getTime() <= now;
+    h += '<div class="game' + (kicked ? ' islive' : '') + '">';
+    h += '<div class="gwhen"><span class="dot"></span>'
+       + (kicked ? 'Started — locked' : esc(fmtKick(iso))) + '</div>';
+    h += '<div class="grow">';
+    h += teamBtn(away, used, kicked, pickKicked);
+    h += '<span class="at">@</span>';
+    h += home ? teamBtn(home, used, kicked, pickKicked) : '';
+    h += '</div></div>';
+  }
+  h += '<div class="submitbar"><button type="button" class="big" id="submitBtn"' + (sel ? '' : ' disabled') + '>' +
+    (sel ? (db.myPick ? 'Change pick to ' : 'Lock in ') + (TEAM_NAMES[sel] || sel) : (db.myPick ? 'Tap a team to change your pick' : 'Tap a team above')) +
+    '</button></div>';
+  h += '<p class="muted">Teams you’ve already used are crossed out. Games that started are locked. The server enforces all of this — no take-backs after kickoff.</p></div>';
+  return h;
+}
+
+function teamBtn(abbr, used, kicked, pickKicked){
+  if (!abbr) return '';
+  const isSel = sel === abbr;
+  const isMine = db.myPick && db.myPick.team === abbr;
+  let cls = 'team';
+  if (isSel) cls += ' sel';
+  if (used.has(abbr)) cls += ' used';
+  else if (kicked || pickKicked) cls += ' locked';
+  if (isMine) cls += ' mypick';
+  const dis = used.has(abbr) || kicked || pickKicked;
+  const tag = used.has(abbr) ? 'USED' : (isMine ? 'YOURS' : '');
+  return '<button type="button" class="' + cls + '" style="--tc:' + (TEAM_COLORS[abbr] || '#444') + '"'
+    + ' data-team="' + esc(abbr) + '"'
+    + (dis ? ' data-dis="1" aria-disabled="true"' : '') + (pickKicked ? ' data-pick-locked="1"' : '') + '>'
+    + teamLogo(abbr)
+    + '<span class="nm">' + esc(TEAM_NAMES[abbr] || abbr) + '</span>'
+    + (tag ? '<span class="tag">' + tag + '</span>' : '')
+    + '</button>';
+}
+
+function renderHistory(meState){
+  const picks = meState.picks || {};
+  const weeks = Object.keys(picks).map(Number).sort((a,b) => a - b);
+  if (!weeks.length) return '';
+  let h = '<div class="card"><h2>Your season</h2><div class="hist">';
+  for (const w of weeks){
+    const p = picks[w];
+    h += '<span class="' + esc(p.outcome || '') + '">' + (p.team ? teamLogo(p.team) : '')
+       + '<b>W' + w + '</b> ' + esc(TEAM_NAMES[p.team] || p.team || '—') + '</span>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderLeague(st){
+  let h = '<div class="card"><h2>The league</h2>';
+  if (st.pot){
+    h += '<div class="potline"><span>Pot</span><b>' + money(st.pot.total) + '</b></div>' +
+      '<div class="potline muted"><span>' + money(st.pot.entry) + ' entries + ' + money(st.pot.bb) + ' buybacks</span>' +
+      '<span class="count">' + (st.aliveCount != null ? st.aliveCount + ' alive' : '') + '</span></div>';
+  }
+  if (st.recap) h += '<details class="disc"><summary class="muted" style="cursor:pointer">Last week’s recap</summary><pre style="white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--dim)">' + esc(st.recap) + '</pre></details>';
+  const rows = db.players.map(p => '<div class="standrow"><span>' + esc(p.name) + '</span><span class="st ' +
+    (p.alive ? 'alive">ALIVE' : 'out">OUT' + (p.elim_week ? ' wk' + p.elim_week : '')) + '</span></div>').join('');
+  h += '<details class="disc"><summary class="muted" style="cursor:pointer">Everyone (' + db.players.length + ')</summary>' + rows + '</details>';
+  h += '</div>';
+  return h;
+}
+
+// ================= events =================
+function wire(){
+  document.querySelectorAll('.navbtn').forEach(b => b.onclick = async () => {
+    view = b.dataset.view;
+    if (view === 'board' && me.player && !DEMO){
+      try{ await loadPickBoard(); }catch(err){ toast('Couldn’t refresh league picks: ' + (err.message || err)); }
+    }
+    render();
+  });
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm) signupForm.onsubmit = e => {
+    e.preventDefault();
+    submitSignupRequest(
+      document.getElementById('signupName').value,
+      document.getElementById('signupEmail').value,
+      document.getElementById('signupPhone').value,
+      document.getElementById('venmoSent').checked
+    ).catch(err => {
+      signupState.busy = false;
+      const msg = String(err && err.message || '');
+      signupState.message = /^(Enter|Confirm)/.test(msg)
+        ? msg : 'Your entry could not be sent. Check your connection and try again, or text Noah.';
+      render();
+    });
+  };
+  const afterSignupMyPick = document.getElementById('afterSignupMyPick');
+  if (afterSignupMyPick) afterSignupMyPick.onclick = () => { view = 'home'; render(); };
+  const goMyPick = document.getElementById('goMyPick');
+  if (goMyPick) goMyPick.onclick = () => { view = 'home'; render(); };
+  const claimGoJoin = document.getElementById('claimGoJoin');
+  if (claimGoJoin) claimGoJoin.onclick = (e) => { e.preventDefault(); view = 'join'; render(); };
+  const boardRefresh = document.getElementById('boardRefresh');
+  if (boardRefresh) boardRefresh.onclick = async () => {
+    boardRefresh.disabled = true;
+    try{ if (!DEMO) await loadPickBoard(); toast('League picks refreshed'); }
+    catch(err){ toast('Couldn’t refresh league picks: ' + (err.message || err)); }
+    render();
+  };
+  const boardSortEl = document.getElementById('boardSort');
+  if (boardSortEl) boardSortEl.onchange = () => { boardSort = boardSortEl.value; render(); };
+  const so = document.getElementById('signOutLink');
+  if (so) so.onclick = e => {
+    e.preventDefault();
+    signOutPlayer().catch(err => toast('Couldn’t sign out: ' + (err.message || err)));
+  };
+  const emailForm = document.getElementById('emailLoginForm');
+  if (emailForm) emailForm.onsubmit = e => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    sendLoginCode(email).catch(err => {
+      loginState.busy = false;
+      loginState.message = /valid email/i.test(err.message || '') ? err.message
+        : (/429|rate limit/i.test(err.message || '') ? 'Too many codes were requested. Wait a few minutes and try again.'
+          : 'A code could not be sent. Confirm this is the roster email or ask Noah for help.');
+      render();
+    });
+  };
+  const codeForm = document.getElementById('codeLoginForm');
+  if (codeForm) codeForm.onsubmit = e => {
+    e.preventDefault();
+    verifyLoginCode(document.getElementById('loginCode').value).catch(async err => {
+      loginState.busy = false;
+      loginState.message = /linked to an active pool account/i.test(err.message || '')
+        ? err.message : 'That code is invalid or expired. Request a new one and try again.';
+      if (/linked to an active pool account/i.test(err.message || '')){ try{ await sb.auth.signOut(); session = null; }catch(e2){} }
+      render();
+    });
+  };
+  const changeEmail = document.getElementById('changeEmailBtn');
+  if (changeEmail) changeEmail.onclick = () => {
+    loginState.sent = false; loginState.busy = false; loginState.message = '';
+    sessionStorage.removeItem('survivor_login_email'); render();
+  };
+  const sw = document.getElementById('switchLink');
+  if (sw) sw.onclick = e => {
+    e.preventDefault();
+    if (!confirm('Switch player? (Your claim stays yours — this just lets you look at the claim screen.)')) return;
+    me.pid = null; me.player = null; localStorage.removeItem('survivor_pid');
+    render();
+  };
+  const filter = document.getElementById('nameFilter');
+  if (filter) filter.oninput = () => {
+    const q = filter.value.toLowerCase();
+    document.querySelectorAll('#nameList .namebtn').forEach(b => {
+      b.style.display = b.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+  };
+  document.querySelectorAll('.namebtn').forEach(b => b.onclick = () => {
+    if (b.dataset.taken){ toast('Already claimed on another phone — ask Noah to reset it if that’s you.'); return; }
+    if (!confirm('Claim "' + b.textContent.replace(/claimed|out wk\d*/,'').trim() + '" as YOU on this phone?')) return;
+    if (DEMO){ toast('Demo mode — claiming disabled'); return; }
+    claim(b.dataset.pid).catch(err => toast('Claim failed: ' + (err.message || err)));
+  });
+  document.querySelectorAll('button.team').forEach(b => b.onclick = () => {
+    if (b.dataset.dis){
+      toast(b.classList.contains('used') ? 'You already used that team this season' :
+        (b.dataset.pickLocked ? 'Your pick is locked because its game already started' : 'That game already kicked off'));
+      return;
+    }
+    sel = (sel === b.dataset.team) ? null : b.dataset.team;
+    render();
+  });
+  const sub = document.getElementById('submitBtn');
+  if (sub) sub.onclick = () => {
+    if (DEMO){ db.myPick = {team: sel}; me.player.used_teams; sel = null; render(); toast('(demo) pick saved'); return; }
+    submitPick().catch(async err => {
+      try{ await loadAll(); }catch(e){}
+      sel = null; render();
+      toast('Couldn’t save the pick: ' + (err.message || err));
+    });
+  };
+}
+
+// ================= boot =================
+(async function(){
+  try{
+    if (DEMO){ loadDemo(); render(); return; }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    await loadBootstrap();
+    await prepareSession();
+    if (authMode === 'email_otp' && !session){ render(); }
+    else await loadAll();
+    render();
+    sb.auth.onAuthStateChange((event, newSession) => {
+      session = newSession;
+      if (authMode === 'email_otp' && event === 'SIGNED_OUT'){
+        me.pid = null; me.player = null; db.players = []; db.week = null; db.myPick = null;
+        setTimeout(render, 0);
+      }
+    });
+    // refresh data when the app comes back to foreground (phones)
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && (authMode !== 'email_otp' || session)){ try{ await loadAll(); render(); }catch(e){} }
+    });
+    // Time passing does not emit a database event, so refresh the open board once
+    // a minute to reveal games that have just kicked off.
+    setInterval(async () => {
+      if (view === 'board' && me.player && !document.hidden){
+        try{ await loadPickBoard(); render(); }catch(e){}
+      }
+    }, 60000);
+  }catch(err){
+    // Don't blame the player's phone. "Failed to fetch" here almost always means
+    // the backend is down (a paused free-tier project looks exactly like this),
+    // and telling 70 people to check their connection routes 70 texts to Noah.
+    const raw = String((err && err.message) || err || '');
+    const backendDown = /failed to fetch|networkerror|load failed|err_name_not_resolved/i.test(raw);
+    document.getElementById('app').innerHTML =
+      '<div class="err"><b>' + (backendDown ? 'The league server isn’t responding.' : 'Couldn’t load the league.') + '</b><br>'
+      + (backendDown
+          ? 'This is on our end, not your phone — Noah has been having a look. Your pick and your entry are safe. Try again in a few minutes.'
+          : esc(raw))
+      + '</div>'
+      + '<button type="button" class="big sec" id="bootRetry">Try again</button>'
+      + '<p class="muted" style="margin-top:12px">Still stuck close to kickoff? Text Noah your pick — he can enter it by hand.</p>';
+    const retry = document.getElementById('bootRetry');
+    if (retry) retry.onclick = () => location.reload();
+  }
+})();
+</script>
+</body>
+</html>
