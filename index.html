@@ -664,7 +664,7 @@ button.team:active .logo{transform:scale(.94)}
 button.team .tag{position:static;flex:none;margin-left:auto;align-self:center;
   font-size:9.5px;letter-spacing:.06em;padding:3px 5px;white-space:nowrap;
   background:rgba(255,255,255,.14);color:var(--tx);border:0}
-button.team.mypick .tag{background:var(--acc);color:var(--acc-ink)}
+button.team.mypick .tag{background:var(--acc);color:var(--acc-ink);font-size:13px;padding:2px 7px}
 button.team .nm{min-width:0;flex:1 1 auto}
 
 /* 1.2  When wk.games is absent the renderer emits [team, null, iso], so the
@@ -738,6 +738,47 @@ header h1::before{height:17px;margin-top:1px}
 .runchip.W{border-left-color:var(--alive)} .runchip.W b{color:var(--alive)}
 .runchip.L,.runchip.T,.runchip.MISS{border-left-color:var(--out)} .runchip.L b,.runchip.T b,.runchip.MISS b{color:var(--out)}
 .runchip.PENDING{border-left-color:var(--acc)} .runchip.PENDING b{color:var(--acc)}
+
+
+/* ===========================================================================
+   60-YEAR-OLD PASS — bigger type, one question per screen, monumental confirm.
+   ========================================================================= */
+body{font-size:17px;line-height:1.5}
+.muted{font-size:14px}
+.lead{font-size:18px;font-weight:700;margin:2px 0 12px}
+
+/* the question + the deadline, not a heading + an alert box */
+.bigq{font-family:var(--fdisp);font-size:26px;letter-spacing:.01em;text-transform:uppercase;
+  margin:2px 0 6px;color:#fff;box-shadow:none;padding:0;background:none}
+.deadline{margin:0 0 14px;font-size:15px;color:var(--acc);font-weight:700}
+
+/* YOU'RE IN — the monument. Team slab, crest, and when the door closes. */
+.youin{display:flex;align-items:center;gap:14px;background:var(--panel2);
+  border-left:6px solid var(--tc,#444);padding:14px;margin-bottom:14px}
+.youin .logo{width:56px;height:56px;flex:none;position:relative;display:flex;align-items:center;
+  justify-content:center;background:var(--tslab,var(--tc));overflow:hidden}
+.youin .logo img{width:100%;height:100%;object-fit:contain}
+.youin .logo .abbr{font-size:14px;font-weight:800;color:var(--tink,#fff)}
+.youin .yitxt{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.youin .yi1{font-family:var(--fcond);font-size:12px;font-weight:800;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--dim)}
+.youin .yi2{font-family:var(--fdisp);font-size:27px;line-height:1;letter-spacing:.01em;
+  text-transform:uppercase;color:#fff}
+.youin .yi3{font-size:14px;color:var(--acc);font-weight:700}
+.youin .yiok{flex:none;font-size:26px;font-weight:800;color:var(--alive)}
+
+.pickhint{text-align:center;color:var(--dim);font-size:14px;margin:10px 0 2px}
+.legend{font-size:13px;text-align:center;margin-top:12px}
+
+/* claim list + inputs sized for big thumbs and reading glasses */
+.namebtn{min-height:56px;font-size:17px;font-weight:700}
+input[type=text],input[type=email],input[type=tel]{font-size:17px;min-height:52px}
+.sectionnav button{min-height:52px;font-size:14px}
+button.team{min-height:62px}
+button.team .nm{font-size:16.5px}
+.game .gwhen{font-size:13px}
+button.big{min-height:56px;font-size:17px}
+.namebtn .tag{font-size:12px}
 
 </style>
 </head>
@@ -1179,8 +1220,13 @@ function render(){
 }
 
 function renderSectionNav(){
-  const items = [['join','Join'],['home','My Pick'],['board','League Picks']];
-  document.getElementById('sectionNav').innerHTML = items.map(x =>
+  // A claimed player never needs Join again — two tabs, not three.
+  const items = me.player
+    ? [['home','My Pick'],['board','Everyone']]
+    : [['join','Join'],['home','My Pick'],['board','Everyone']];
+  const nav = document.getElementById('sectionNav');
+  nav.style.gridTemplateColumns = 'repeat(' + items.length + ',1fr)';
+  nav.innerHTML = items.map(x =>
     '<button type="button" class="navbtn' + (view === x[0] ? ' on' : '') + '" data-view="' + x[0] + '">' + x[1] + '</button>'
   ).join('');
 }
@@ -1189,14 +1235,12 @@ function renderSignup(){
   const cfg = (db.league && db.league.config) || {};
   const fee = cfg.entryFee != null ? +cfg.entryFee : 10;
   if (signupState.done){
-    return '<div class="card"><div class="ok"><b>Entry received.</b><br>Noah will review your information and verify the Venmo payment.</div>'
-      + '<h2>What happens next</h2><p class="muted">Your payment checkbox is a confirmation from you—not an automatic payment check. '
-      + 'Once Noah adds and approves you, use <b>My Pick</b> to claim or sign in to your account.</p>'
+    return '<div class="card"><div class="ok"><b>You’re in the queue.</b><br>Noah checks the Venmo, then adds you — usually same day.</div>'
       + '<button type="button" class="big sec" id="afterSignupMyPick">Go to My Pick</button></div>';
   }
   const f = signupState.form || {};
   let h = '<div class="card"><h2>Join ' + esc(cfg.leagueName || 'Mehrle Survivor') + '</h2>'
-    + '<p class="muted">Enter your own contact information so Noah can add you to the pool and reach you about picks.</p>';
+    + '<p class="muted">Noah needs three things to add you.</p>';
   if (signupState.message) h += '<div class="err">' + esc(signupState.message) + '</div>';
   h += '<form id="signupForm">'
     + '<label class="fieldlabel" for="signupName">Full name</label>'
@@ -1236,7 +1280,7 @@ function seasonRun(pubRow, boardRow){
 
 function renderPickBoard(){
   if (!me.player){
-    return '<div class="card"><h2>League picks</h2><p class="muted">The pick board is private to pool members. Open <b>My Pick</b> and claim your name or sign in first.</p>'
+    return '<div class="card"><h2>Everyone</h2><p class="muted">Members only — claim your name first.</p>'
       + '<button type="button" class="big sec" id="goMyPick">Go to My Pick</button></div>';
   }
   if (!db.board.length){
@@ -1252,8 +1296,8 @@ function renderPickBoard(){
     }
     return String(a.player_name || '').localeCompare(String(b.player_name || ''));
   });
-  let h = '<div class="card"><h2>Week ' + esc(db.boardWeek) + ' league picks</h2>'
-    + '<p class="muted">Other people’s picks unlock only when <b>that team’s game starts</b>. Before kickoff, a saved pick and no pick look exactly the same.</p>'
+  let h = '<div class="card"><h2>Week ' + esc(db.boardWeek) + ' — everyone</h2>'
+    + '<p class="muted">Picks show once that team’s game starts.</p>'
     + '<div class="boardtools"><button type="button" class="big sec mini" id="boardRefresh">Refresh</button>'
     + '<label class="muted" for="boardSort">Sort</label><select id="boardSort"><option value="player"' + (boardSort === 'player' ? ' selected' : '') + '>Player</option>'
     + '<option value="team"' + (boardSort === 'team' ? ' selected' : '') + '>Revealed team</option></select></div>';
@@ -1296,7 +1340,7 @@ function renderClaim(){
     h += '<p class="muted">The roster hasn’t been published yet — check back soon, or text Noah.</p></div>';
     return h;
   }
-  h += '<p class="muted">Tap your name to claim it on this phone. One phone per person — if you switch phones, Noah can reset you.</p>' +
+  h += '<p class="lead">Tap your name.</p>' +
     '<input type="text" id="nameFilter" placeholder="Search your name…" autocomplete="off">' +
     '<div id="nameList">';
   for (const p of db.players){
@@ -1308,10 +1352,8 @@ function renderClaim(){
   h += '</div>';
   // The two ways this list fails a real person, answered in place: their name is
   // missing (they never joined) or it says "claimed" (old phone still holds it).
-  h += '<p class="muted" style="margin-top:14px">Don’t see your name? You haven’t joined yet — ' +
-    '<a href="#" id="claimGoJoin">enter the pool here</a>.<br>' +
-    'Name there but marked <b>claimed</b>? That’s your old phone. Text Noah and he’ll reset it — ' +
-    'don’t pay again.</p></div>';
+  h += '<p class="muted" style="margin-top:14px">Not listed? <a href="#" id="claimGoJoin">Join here</a>.<br>' +
+    'Says <b>claimed</b>? That’s your old phone — text Noah. Don’t pay again.</p></div>';
   return h;
 }
 
@@ -1326,16 +1368,13 @@ function renderBuyback(meState){
       + '<h2>Buy back in for ' + esc(price) + '</h2>'
       + '<p class="muted">You’re back in for <b>Week ' + wk + '</b> — everyone else keeps playing without you until then.</p></div>'
     + '<a class="venmo" href="' + esc(VENMO_URL) + '" target="_blank" rel="noopener">Send ' + esc(price) + ' on Venmo</a>'
-    + '<p class="muted" style="text-align:center;margin:-2px 0 14px">Put your name in the note, then text Noah. He marks you back in by hand.</p>'
+    + '<p class="muted" style="text-align:center;margin:-2px 0 14px">Name in the note, then text Noah.</p>'
     + '<ul class="bbrules">'
-      + '<li><b>One buyback per season.</b> If you go out again, that’s it.</li>'
-      + '<li>The price is $10 × the week you come back in — it goes up every week you wait.</li>'
-      + '<li>' + (used.length
-          ? 'Teams you already used stay used: <b>' + esc(used.join(', ')) + '</b> — including the one you lost with.'
-          : 'Every team you already used stays used, including the one you lost with.') + '</li>'
-      + '<li>Your money goes straight into the pot.</li>'
+      + '<li><b>One buyback per season</b> — lose again and you’re done.</li>'
+      + '<li>Price goes up ' + '$10 every week you wait.</li>'
+      + '<li>' + (used.length ? '<b>' + esc(used.join(', ')) + '</b> stay' + (used.length>1?'':'s') + ' used.' : 'Teams you used stay used.') + '</li>'
     + '</ul>'
-    + '<p class="muted">Not worth it? Do nothing — you’ll still see everyone else’s picks and the recap each week.</p>'
+    + '<p class="muted">Or do nothing — you can still watch everyone else.</p>'
     + '</div>';
 }
 
@@ -1346,12 +1385,22 @@ function renderPickCard(){
   const wk = db.week, now = Date.now();
   const used = new Set(me.player.used_teams || []);
   const pickKicked = !!(db.myPick && wk.kicks[db.myPick.team] && new Date(wk.kicks[db.myPick.team]).getTime() <= now);
-  let h = '<div class="card"><h2>Week ' + wk.week + ' — pick your winner</h2>';
+  let h = '<div class="card">';
   if (db.myPick){
-    h += '<div class="pickedbanner">Your pick: <b>' + esc(TEAM_NAMES[db.myPick.team] || db.myPick.team) + '</b>' +
-      (pickKicked ? ' — locked (your game started)' : ' — tap another team to change it before kickoff') + '</div>';
+    // The confirmed state is the whole point of opening the app. Make it a monument:
+    // crest, team, and exactly when the door closes — not a grey sentence.
+    const myKick = wk.kicks[db.myPick.team];
+    const _c = TEAM_COLORS[db.myPick.team] || '#444';
+    h += '<div class="youin" style="--tc:' + _c + ';--tink:' + teamInk(_c) + ';--tslab:' + slabFor(_c) + '">'
+      + teamLogo(db.myPick.team)
+      + '<div class="yitxt"><span class="yi1">Week ' + wk.week + ' — you\'re in</span>'
+      + '<span class="yi2">' + esc(TEAM_NAMES[db.myPick.team] || db.myPick.team) + '</span>'
+      + '<span class="yi3">' + (pickKicked ? 'Locked — your game started'
+          : (myKick ? 'You can change it until ' + esc(fmtKick(myKick)) : 'You can change it until kickoff')) + '</span></div>'
+      + '<span class="yiok">✓</span></div>';
   } else {
-    h += '<div class="err">No pick yet! If you don’t pick before the games, you’re out.</div>';
+    h += '<h2 class="bigq">Week ' + wk.week + ': who wins?</h2>'
+      + '<p class="deadline">Tap one team below. Pick before the games start or you\'re out.</p>';
   }
   const games = (wk.games && wk.games.length) ? wk.games : Object.keys(wk.kicks || {}).sort().map(t => [t, null, wk.kicks[t]]);
   for (const g of games){
@@ -1366,10 +1415,14 @@ function renderPickCard(){
     h += home ? teamBtn(home, used, kicked, pickKicked) : '';
     h += '</div></div>';
   }
-  h += '<div class="submitbar"><button type="button" class="big" id="submitBtn"' + (sel ? '' : ' disabled') + '>' +
-    (sel ? (db.myPick ? 'Change pick to ' : 'Lock in ') + (TEAM_NAMES[sel] || sel) : (db.myPick ? 'Tap a team to change your pick' : 'Tap a team above')) +
-    '</button></div>';
-  h += '<p class="muted">Teams you’ve already used are crossed out. Games that started are locked. The server enforces all of this — no take-backs after kickoff.</p></div>';
+  // No dead grey button pretending to be tappable. Nothing selected = nothing to press.
+  if (sel){
+    h += '<div class="submitbar"><button type="button" class="big" id="submitBtn">' +
+      (db.myPick ? 'Change pick to ' : 'Lock in ') + esc(TEAM_NAMES[sel] || sel) + ' →</button></div>';
+  } else if (db.myPick && !pickKicked){
+    h += '<p class="pickhint">Tap another team to change your pick.</p>';
+  }
+  h += '<p class="muted legend">Crossed out = already used that team · Locked = game started</p></div>';
   return h;
 }
 
@@ -1383,7 +1436,9 @@ function teamBtn(abbr, used, kicked, pickKicked){
   else if (kicked || pickKicked) cls += ' locked';
   if (isMine) cls += ' mypick';
   const dis = used.has(abbr) || kicked || pickKicked;
-  const tag = isMine ? 'YOUR PICK' : '';
+  // The monument above already names the pick; in the row a checkmark is enough
+  // and never squeezes the team name.
+  const tag = isMine ? '✓' : '';
   const _c = TEAM_COLORS[abbr] || '#444';
   return '<button type="button" class="' + cls + '" style="--tc:' + _c + ';--tink:' + teamInk(_c) + '"'
     + ' data-team="' + esc(abbr) + '"'
