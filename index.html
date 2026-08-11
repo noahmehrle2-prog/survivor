@@ -719,6 +719,26 @@ header h1 span{white-space:normal;overflow:visible;text-overflow:clip;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 header h1::before{height:17px;margin-top:1px}
 
+
+/* League-picks board: each player's whole season, not just this week.
+   Safe to show — the published blob only ever contains GRADED weeks, so the
+   current week stays concealed by the same rule as before. */
+.runrow{display:flex;align-items:center;gap:9px;padding:0 0 11px;margin-top:-4px;border-bottom:1px solid var(--rule);}
+.boardrow{border-bottom:0}
+.runrec{flex:none;font-family:var(--fcond);font-size:12px;font-weight:800;letter-spacing:.08em;
+  color:var(--dim);min-width:34px}
+.run{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+.runchip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px 2px 2px;background:var(--panel2);
+  border-left:3px solid var(--dimmer)}
+.runchip b{font-family:var(--fcond);font-size:11px;font-weight:800;color:var(--dim);letter-spacing:.04em}
+.runchip .logo{width:20px;height:20px;flex:none;position:relative;display:flex;align-items:center;
+  justify-content:center;overflow:hidden}
+.runchip .logo img{width:100%;height:100%;object-fit:contain}
+.runchip .logo .abbr{font-size:8px;font-weight:800;color:var(--tink,#fff)}
+.runchip.W{border-left-color:var(--alive)} .runchip.W b{color:var(--alive)}
+.runchip.L,.runchip.T,.runchip.MISS{border-left-color:var(--out)} .runchip.L b,.runchip.T b,.runchip.MISS b{color:var(--out)}
+.runchip.PENDING{border-left-color:var(--acc)} .runchip.PENDING b{color:var(--acc)}
+
 </style>
 </head>
 <body>
@@ -1104,6 +1124,11 @@ function loadDemo(){
     {board_week:3,pid:'demo_amy',player_name:'Amy (demo)',alive:true,team:'DAL',pick_status:'revealed',is_self:false},
     {board_week:3,pid:'demo_joe',player_name:'Joe (demo)',alive:false,elim_week:2,team:null,pick_status:'out',is_self:false},
   ];
+  // graded history for the others so the season run has something to draw
+  db.league.state.players.demo_amy = {name:'Amy (demo)', alive:true,
+    picks:{1:{team:'BUF', outcome:'W'}, 2:{team:'SF', outcome:'W'}}};
+  db.league.state.players.demo_joe = {name:'Joe (demo)', alive:false, elimWeek:2,
+    picks:{1:{team:'KC', outcome:'W'}, 2:{team:'NYJ', outcome:'L'}}};
   session = {user:{id:'me'}};
   if (!requestedScreen) view = 'home';
 }
@@ -1189,6 +1214,26 @@ function renderSignup(){
   return h;
 }
 
+
+function seasonRun(pubRow, boardRow){
+  const picks = (pubRow && pubRow.picks) || {};
+  const weeks = Object.keys(picks).map(Number).sort(function(a,b){ return a - b; });
+  if (!weeks.length) return '';
+  let wins = 0, chips = '';
+  for (const w of weeks){
+    const p = picks[w] || {};
+    const o = p.outcome || '';
+    if (o === 'W') wins++;
+    chips += '<span class="runchip ' + esc(o) + '" title="Week ' + w + ' — '
+      + esc(TEAM_NAMES[p.team] || p.team || 'no pick') + (o ? ' (' + esc(o) + ')' : '') + '">'
+      + (p.team ? teamLogo(p.team) : '<span class="logo" style="--tc:#39434f;--tink:#fff;--tslab:#39434f"><span class="abbr">—</span></span>')
+      + '<b>' + w + '</b></span>';
+  }
+  const rec = wins + '-' + (weeks.length - wins);
+  return '<div class="runrow"><span class="runrec">' + esc(rec) + '</span>'
+    + '<span class="run">' + chips + '</span></div>';
+}
+
 function renderPickBoard(){
   if (!me.player){
     return '<div class="card"><h2>League picks</h2><p class="muted">The pick board is private to pool members. Open <b>My Pick</b> and claim your name or sign in first.</p>'
@@ -1212,6 +1257,7 @@ function renderPickBoard(){
     + '<div class="boardtools"><button type="button" class="big sec mini" id="boardRefresh">Refresh</button>'
     + '<label class="muted" for="boardSort">Sort</label><select id="boardSort"><option value="player"' + (boardSort === 'player' ? ' selected' : '') + '>Player</option>'
     + '<option value="team"' + (boardSort === 'team' ? ' selected' : '') + '>Revealed team</option></select></div>';
+  const pub = ((db.league && db.league.state && db.league.state.players) || {});
   for (const r of rows){
     let pick = 'Hidden until kickoff', cls = '';
     const ownCurrentPick = r.is_self && db.week && db.week.week === r.board_week && db.myPick;
@@ -1220,7 +1266,8 @@ function renderPickBoard(){
     else if (r.pick_status === 'missing') pick = 'No pick';
     else if (r.pick_status === 'out') pick = 'Out' + (r.elim_week ? ' — week ' + r.elim_week : '');
     h += '<div class="boardrow"><span class="player">' + esc(r.player_name) + (r.is_self ? ' <span class="muted">(you)</span>' : '') + '</span>'
-      + '<span class="pick' + cls + '">' + esc(pick) + '</span></div>';
+      + '<span class="pick' + cls + '">' + esc(pick) + '</span></div>'
+      + seasonRun(pub[r.pid], r);
   }
   return h + '</div>';
 }
